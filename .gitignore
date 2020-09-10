@@ -1,0 +1,11 @@
+# compiled
+**/__pycache__/
+
+# ignore models
+*.pt
+
+# ignore data
+dl4nlp/data/
+
+# jupyter
+**/.ipynb_checkpoints/
