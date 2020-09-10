@@ -1,0 +1,1 @@
+Namespace(batch_size=4096, data_path='./data/wili-2018/x_train.txt', embedding_dim=128, epochs=1000, hidden_dim=256, input_dim=12300, label_path='./data/wili-2018/y_train.txt', lr=0.001, model_checkpoint=None, num_layers=1, sequence_length=32, slices_per_paragraph=10, val_data_path='./data/wili-2018/x_test.txt', val_label_path='./data/wili-2018/y_test.txt')
