@@ -61,7 +61,8 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
             output = model(inputs)
             output = torch.argmax(output,dim=1).view(-1)
             prediction = get_paragraph_prediction(output, labels)
-            y_pred.append(prediction.item()); y_true.append(labels[0].item());
+            y_pred.append(prediction.item())
+            y_true.append(labels[0].item());
             correct = (prediction == labels[0].item()).float()
             #print("prediction: ", prediction, "label: ", labels[0].item())
             #print(correct)

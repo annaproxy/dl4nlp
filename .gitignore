@@ -4,8 +4,8 @@
 # ignore models
 *.pt
 
-# ignore data
-dl4nlp/data/
+# ignore pretrained models
+src/models/
 
 # jupyter
 **/.ipynb_checkpoints/
