@@ -6,15 +6,11 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 import torch.optim as optim
-from LSTM import Model
-from utils.utils import validate_model
 
+from LSTM import Model
 from data.load_data import get_wili_data, get_wili_data_bytes
 from utils.config import LSTM_config
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-from utils.utils import *
-
+from utils.utils import validate_paragraphs
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -45,7 +41,6 @@ def train(model, training_loader, validation_loader, validation_data, config):
                 avg_train_loss.append(avg)
                 print('Loss: %.3f' % avg)
                 print()
-                #accuracy = validate_model(model, validation_data, validation_loader, config.batch_size)
                 accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
                 print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
                 model.train()

@@ -20,11 +20,11 @@ def get_wili_data(config):
                           label_path=val_label_path,
                           sequence_length=config.sequence_length
                          )
-
+    return train_data, val_data
 
 def get_wili_data_bytes(config):
     """
-    get train and validation data loaders.
+    get train and validation data loaders for bytes
     """
     
     data_path = config.data_path
@@ -43,4 +43,5 @@ def get_wili_data_bytes(config):
                           label_path=val_label_path,
                           sequence_length=config.sequence_length,
                           n_slices=config.slices_per_paragraph
+                        )
     return train_data, val_data
