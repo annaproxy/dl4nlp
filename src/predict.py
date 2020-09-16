@@ -8,7 +8,7 @@ import torch.optim as optim
 from LSTM import Model
 from utils.utils import *
 
-from data.load_data import get_wili_data
+from data.load_data import get_wili_data, get_wili_data_bytes
 from utils.config import LSTM_config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,7 +30,11 @@ def main():
                   config.hidden_dim, config.num_layers, bidirectional=False)
 
     # Load Data
-    _, validation_data = get_wili_data(config)
+    if config.input == 'bytes':
+        _, validation_data = get_wili_data_bytes(config)
+        
+    else:
+        _, validation_data = get_wili_data(config)
 
 
     validation_loader = DataLoader(validation_data,

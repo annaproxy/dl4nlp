@@ -41,7 +41,6 @@ class WiliDataLoader(Dataset):
         """
         Each line is a list of characters belonging to a specific language.
         Skipping the "/n" token.
-
         """
 
         with open(self.data_path, 'r') as f:
@@ -67,20 +66,32 @@ class WiliDataLoader(Dataset):
         """
         paragraph, language = self.lines[index], self.line_languages[index]
         paragraph_length = len(paragraph)
-        
-        offset = np.random.randint(0, paragraph_length-self.sequence_length)
-        inputs = np.array([self.char_to_idx[ch] for ch in paragraph[offset:offset+self.sequence_length]])
-        target = self.lang_to_idx[language]
-        
+        inputs = []; target = [];
+        if not self.predict:
+
+            offset = np.random.randint(0, paragraph_length-self.sequence_length)
+            inputs = np.array([self.char_to_idx[ch] for ch in paragraph[offset:offset+self.sequence_length]])
+            target = self.lang_to_idx[language]
+
+        else:
+            offset = self.prediction_offset
+            offset_space = paragraph_length - self.sequence_length
+            #n_sequences = offset_space // offset
+
+            for i in range(0,offset_space, offset):
+                inputs.append(np.array([self.char_to_idx[ch] for ch in paragraph[i:i+self.sequence_length]]))
+                target.append(self.lang_to_idx[language])
+            inputs = np.array(inputs); target = np.array(target);
+
         return inputs, target
-        
+
 
     def __len__(self):
         return len(self.lines)
 
 
 class WiliBytesDataLoader(Dataset):
-    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8):
+    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=10):
 
         self.data_path = data_path
         self.label_path = label_path
@@ -89,7 +100,7 @@ class WiliBytesDataLoader(Dataset):
         self.lines, self.line_languages = self.load_lines()
         
         self.languages = sorted(list(set(self.line_languages)))
-        self.languages.sort()
+        print("Number of languages: ", len(self.languages))
         
         self.lang_to_idx = { l:i for i,l in enumerate(self.languages) }
         self.idx_to_lang = { i:l for i,l in enumerate(self.languages) }        
@@ -99,6 +110,9 @@ class WiliBytesDataLoader(Dataset):
         self.vocab_size = len(self.vocab_list)
         
         print("Vocabulary of size: {}".format(self.vocab_size))
+
+        self.predict = False
+        self.prediction_offset = predict_offset
         
 
     def load_lines(self):
@@ -118,7 +132,7 @@ class WiliBytesDataLoader(Dataset):
         return lines, languages
 
 
-    def __getitem__(self, index):
+    def __oldgetitem__(self, index):
         """
         Get the paragraph (line) and corresponding language.
         Get a random sequence of sequence length within that paragraph.
@@ -132,6 +146,35 @@ class WiliBytesDataLoader(Dataset):
         
         return inputs, target
         
+    def predict_paragraph(self, predict=False):
+        self.predict = predict
+
+    def __getitem__(self, index):
+        """
+        Get the paragraph (line) and corresponding language.
+        Get a random sequence of sequence length within that paragraph.
+        """
+        paragraph, language = self.lines[index], self.line_languages[index]
+        paragraph_length = len(paragraph)
+        inputs = []; target = [];
+        if not self.predict:
+
+            offset = np.random.randint(0, paragraph_length-self.sequence_length)
+            inputs = np.array([ch for ch in paragraph[offset:offset+self.sequence_length]])
+            target = self.lang_to_idx[language]
+
+        else:
+            offset = self.prediction_offset
+            offset_space = paragraph_length - self.sequence_length
+            #n_sequences = offset_space // offset
+
+            for i in range(0,offset_space, offset):
+                inputs.append(np.array([ch for ch in paragraph[i:i+self.sequence_length]]))
+                target.append(self.lang_to_idx[language])
+            inputs = np.array(inputs); target = np.array(target);
+
+        return inputs, target
+
 
     def __len__(self):
         return len(self.lines)

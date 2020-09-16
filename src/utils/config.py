@@ -2,6 +2,8 @@ import argparse
 
 def LSTM_config():
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--input', type=str, default='chars', help='Kind of input: [chars|bytes]')
     parser.add_argument('--batch_size', type=int, default=2048)
     parser.add_argument('--sequence_length', type=int, default=42)
 
@@ -21,6 +23,13 @@ def LSTM_config():
     parser.add_argument('--val_label_path', type=str, default="./data/wili-2018/y_val_sub.txt")
 
     args = parser.parse_args()
+
+    if args.input == 'bytes':
+        args.data_path = "./data/wili-2018/x_bytes_train_sub.txt"
+        args.val_data_path = "./data/wili-2018/x_bytes_val_sub.txt"
+
+
+
     print(args)
     with open("config.txt", 'w') as file:
         file.write(str(args))

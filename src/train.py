@@ -58,13 +58,12 @@ def main():
                   config.hidden_dim, config.num_layers, bidirectional=False)
 
 
-
-    # Load Data for bytes 
-    #training_data, validation_data = get_wili_data_bytes(config)
-    
-
-    # Load Data
-    training_data, validation_data = get_wili_data(config)
+    if config.input == 'bytes':
+        # Load Data for bytes 
+        training_data, validation_data = get_wili_data_bytes(config)
+    else:
+        # Load Data
+        training_data, validation_data = get_wili_data(config)
 
 
     training_loader = DataLoader(training_data,
@@ -82,7 +81,6 @@ def main():
             state_dict = torch.load(f)
             model.load_state_dict(state_dict)
             print("Model Loaded From: {}".format(config.model_checkpoint))
-
     model = model.to(device)
     train(model, training_loader, validation_loader, validation_data, config)
 

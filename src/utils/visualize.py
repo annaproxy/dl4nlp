@@ -1,6 +1,6 @@
 import pandas as pd 
-df_anna = pd.read_csv('../classification_report.txt', delimiter='\t')
-df = pd.read_csv('../bryan_newest.txt', delimiter='\t')
+df = pd.read_csv('../classification_report.txt', delimiter='\t')
+#df = pd.read_csv('../bryan_newest.txt', delimiter='\t')
 
 lang_dict = {}
 fam_dict = {}

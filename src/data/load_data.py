@@ -36,12 +36,10 @@ def get_wili_data_bytes(config):
     train_data = WiliBytesDataLoader(data_path=data_path,
                           label_path=label_path,
                           sequence_length=config.sequence_length,
-                          n_slices=config.slices_per_paragraph
                          )
     
     val_data = WiliBytesDataLoader(data_path=val_data_path,
                           label_path=val_label_path,
                           sequence_length=config.sequence_length,
-                          n_slices=config.slices_per_paragraph
                         )
     return train_data, val_data
