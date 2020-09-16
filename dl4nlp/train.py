@@ -1,4 +1,5 @@
 import numpy as np
+import sys 
 
 import torch
 import torch.nn as nn
@@ -8,10 +9,10 @@ import torch.optim as optim
 from LSTM import Model
 from utils.utils import validate_model
 
-from data.load_data import get_wili_data
+from data.load_data import get_wili_data, get_wili_data_bytes
 from utils.config import LSTM_config
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def train(model, training_loader, validation_loader, validation_data, config):
     model.train()
@@ -34,7 +35,7 @@ def train(model, training_loader, validation_loader, validation_data, config):
             optimizer.step()
             train_loss.append(loss.item())
 
-            if  (i+1) % 21 == 0:
+            if  (i+1) % 42 == 0:
                 print('%d iterations' % (i+1))
                 avg = np.mean(train_loss[-50:])
                 avg_train_loss.append(avg)
@@ -58,7 +59,7 @@ def main():
                   config.hidden_dim, config.num_layers)
 
     # Load Data
-    training_data, validation_data = get_wili_data(config)
+    training_data, validation_data = get_wili_data_bytes(config)
 
 
     training_loader = DataLoader(training_data,
@@ -71,11 +72,18 @@ def main():
                              shuffle=False,
                              drop_last=False)
 
+    #for i, (inputs, labels) in enumerate(training_loader):
+    #    print(i,inputs,labels)
+    #    break
+    #sys.exit(0)
+    
     if config.model_checkpoint is not None:
         with open(config.model_checkpoint, 'rb') as f:
             state_dict = torch.load(f)
             model.load_state_dict(state_dict)
             print("Model Loaded From: {}".format(config.model_checkpoint))
+    
+
 
     model = model.to(device)
     train(model, training_loader, validation_loader, validation_data, config)
