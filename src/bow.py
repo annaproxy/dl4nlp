@@ -10,6 +10,8 @@ import json
 import itertools as it
 import numpy as np
 
+import torch
+
 class Data():
     def __init__(self):
         data = self.read_file(args.in_dir + args.data)
@@ -21,14 +23,17 @@ class Data():
         self.labels_batches = labels_batches
         self.vocabulary = self.read_file(args.v_dir + args.vocab)
 
+        self.num_batches = len(self.data_batches)
+        self.next_batch = 0
+
         languages = list(set(labels))
         languages.sort()
 
         self.lang_to_idx = {l:i for i, l in enumerate(languages)}
         self.idx_to_lang = {i:l for i, l in enumerate(languages)}
 
-
-    def read_file(self, file_name):
+    @staticmethod
+    def read_file(file_name):
         if not os.path.isfile(file_name):
             raise ValueError("Given input file cannot be found.")
 
@@ -40,7 +45,8 @@ class Data():
         file.close()
         return contents
 
-    def grouper(self, data, n, fillvalue=None):
+    @staticmethod
+    def grouper(data, n, fillvalue=None):
         """ Create batches of data.
 
         Parameters
@@ -60,26 +66,41 @@ class Data():
         iters = [iter(data)] * n
         return list(it.zip_longest(*iters, fillvalue=fillvalue))
 
-def bag_of_words(data, vocabulary):
-    """Create character level bag of words embedding for NLP data.
+    def bag_of_words(self, data):
+        """ Create character level bag of words embedding.
 
-    Parameters
-    ----------
-    data : list of paragraphs
-    vocabulary : list of all possible characters
+        Parameters
+        ----------
+        data : list
+            batch of data to be embedded
 
-    Returns
-    -------
-    np ndarray, lists how many times each character occurs in each paragraph
+        Returns
+        -------
+        np ndarray, lists how many times each character occurs in each paragraph
 
-    """
-    embeddings = np.ndarray((len(data), len(vocabulary)))
-    for i, paragraph in enumerate(data):
-        all_chars_paragraph = [char for char in paragraph]
-        for j, char in enumerate(vocabulary):
-            char_count = all_chars_paragraph.count(char)
-            embeddings[i, j] = char_count
-    return embeddings
+        """
+        embeddings = np.ndarray((len(data), len(self.vocabulary)))
+        for i, paragraph in enumerate(data):
+            all_chars_paragraph = [char for char in paragraph]
+            for j, char in enumerate(self.vocabulary):
+                char_count = all_chars_paragraph.count(char)
+                embeddings[i, j] = char_count
+        return embeddings
+
+    def get_next_embedded_batch(self):
+        batch = self.data_batches[self.next_batch]
+        self.next_batch += 1
+        return self.bag_of_words(batch)
+
+
+class LinearRegressionModel(torch.nn.Module):
+    def __init__(self):
+        super(LinearRegressionModel, self).__init__()
+        self.linear = torch.nn.Linear(len(self.vocabulary), 1)
+
+    def forward(self, x):
+        y_pred = self.linear(x)
+        return y_pred
 
 def main():
     raise NotImplementedError()
