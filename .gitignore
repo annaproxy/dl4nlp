@@ -1,0 +1,21 @@
+# compiled
+**/__pycache__/
+
+# ignore models
+*.pt
+
+# ignore pretrained models
+src/lstm/models/
+
+# jupyter
+**/.ipynb_checkpoints/
+
+# data
+src/gpt-2-LI/data/wili-2018/
+src/c2v/data/wili-2018/
+src/c2v/models/
+
+# gpt models
+src/gpt-2-LI/models/gpt/
+
+
