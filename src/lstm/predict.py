@@ -13,10 +13,10 @@ from utils.config import LSTM_config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def predict(model, validation_loader, validation_data, config):
+def predict(model, validation_loader, validation_data, config, filename):
     model.eval()
 
-    accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False)
+    accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False, textfile=filename)
     print("Validation Accuracy: {}".format(accuracy))
 
     #write_results((avg_train_loss, val_loss, val_accuracy), model_type+"_")
@@ -35,8 +35,9 @@ def main():
         
     else:
         _, validation_data = get_wili_data(config)
+        #raise ValueError()
 
-
+    
     validation_loader = DataLoader(validation_data,
                              batch_size=1,
                              shuffle=False,
@@ -49,7 +50,7 @@ def main():
             print("Model Loaded From: {}".format(config.model_checkpoint))
 
     model = model.to(device)
-    predict(model, validation_loader, validation_data, config)
+    predict(model, validation_loader, validation_data, config, config.val_data_path.replace('bytes_', ''))
 
 
 if __name__ == '__main__':

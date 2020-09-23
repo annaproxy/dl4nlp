@@ -3,9 +3,9 @@ from tokenizers.decoders import ByteLevel
 
 NAME = 'unicode-medium'
 LOAD = True 
-train_path = 'data/wili-2018/x_train_sub.txt'
-val_path = 'data/wili-2018/x_val_sub.txt'
-test_path = 'data/wili-2018/x_test.txt'
+train_path = 'data/wili-2018/x_train_sub_clean.txt'
+val_path = 'data/wili-2018/x_val_sub_clean.txt'
+test_path = 'data/wili-2018/x_test_clean.txt'
 
 if LOAD:
     # For loading
@@ -34,8 +34,10 @@ def write_bpe_file(in_path, out_path):
                 writer.write(' '.join([str(z) for z in bp_ids]))
                 writer.write('\n')
 
-write_bpe_file(train_path,'data/wili-2018/x_bytes_train_sub.txt')
-write_bpe_file(val_path,'data/wili-2018/x_bytes_val_sub.txt')
+write_bpe_file(train_path,'data/wili-2018/x_bytes_train_clean.txt')
+write_bpe_file(val_path,'data/wili-2018/x_bytes_val_clean.txt')
+write_bpe_file(test_path,'data/wili-2018/x_bytes_test_clean.txt')
+
 
 #decoder = ByteLevel()
 #print(decoder.decode(Dutch.tokens))
