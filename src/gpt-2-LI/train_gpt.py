@@ -12,10 +12,7 @@ import random
 import argparse
 import numpy as np
 from GPT2.model import (GPT2LMHeadModel)
-from GPT2.utils import load_weight
 from GPT2.config import GPT2Config
-from GPT2.sample import sample_sequence
-from GPT2.encoder import get_encoder
 from utils.utils import *
 from utils.config import config
 
@@ -26,7 +23,7 @@ def train(model, training_loader, validation_loader, validation_data, config):
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.98)
     avg_train_loss = []
     train_loss = []
     accuracy = 0
@@ -45,16 +42,17 @@ def train(model, training_loader, validation_loader, validation_data, config):
             optimizer.step()
             train_loss.append(loss.item())
 
-            if  (i+1) % 301 == 0:
+            if  (i+1) % 51 == 0:
                 print('%d iterations' % (i+1))
                 avg = np.mean(train_loss[-50:])
                 avg_train_loss.append(avg)
                 print('Loss: %.3f' % avg)
                 print()
-                accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
-                print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
-                model.train()
-                torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(accuracy)+".pt")
+                #accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
+                #print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
+                #model.train()
+                #torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(accuracy)+".pt")
+                torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+".pt")
 
         scheduler.step()
         torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(accuracy)+".pt")
@@ -73,6 +71,11 @@ def main():
     #    print("GPT-2 Model Loaded.")
 
     #   model = load_weight(model, state_dict)
+    if param_config.model_checkpoint is not None:
+        with open(param_config.model_checkpoint, 'rb') as f:
+            state_dict = torch.load(f)
+            model.load_state_dict(state_dict)
+            print("Model Loaded From: {}".format(param_config.model_checkpoint))
     model.to(device)
 
     # Load Data
