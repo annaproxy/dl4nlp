@@ -14,7 +14,7 @@ from utils.utils import validate_paragraphs
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def train(model, training_loader, validation_loader, validation_data, config):
+def train(model, training_loader, validation_loader, validation_data, config, model_name=""):
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
@@ -44,18 +44,17 @@ def train(model, training_loader, validation_loader, validation_data, config):
                 accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
                 print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
                 model.train()
-                torch.save(model.state_dict(), "./models/LSTM/"+str(epoch)+"_"+str(accuracy)+".pt")
+                torch.save(model.state_dict(), "./models/LSTM/"+model_name+str(epoch)+"_"+str(accuracy)+".pt")
 
         scheduler.step()
-        torch.save(model.state_dict(), "./models/LSTM/"+str(epoch)+"_"+str(accuracy)+".pt")
+        #torch.save(model.state_dict(), "./models/LSTM/"+model_name+str(epoch)+"_"+str(accuracy)+".pt")
     #write_results((avg_train_loss, val_loss, val_accuracy), model_type+"_")
     print("Iterators Done")
 
 def main():
 
     config = LSTM_config()
-    model = Model(config.input_dim, config.embedding_dim,
-                  config.hidden_dim, config.num_layers, bidirectional=False)
+    
 
 
     if config.input == 'bytes':
@@ -76,13 +75,16 @@ def main():
                              shuffle=True,
                              drop_last=False)
 
+    model = Model(config.input_dim, config.embedding_dim,
+                  config.hidden_dim, config.num_layers, bidirectional=False)
+
     if config.model_checkpoint is not None:
         with open(config.model_checkpoint, 'rb') as f:
             state_dict = torch.load(f)
             model.load_state_dict(state_dict)
             print("Model Loaded From: {}".format(config.model_checkpoint))
     model = model.to(device)
-    train(model, training_loader, validation_loader, validation_data, config)
+    train(model, training_loader, validation_loader, validation_data, config, model_name=config.model_name)
 
 
 if __name__ == '__main__':

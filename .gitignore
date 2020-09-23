@@ -1,11 +1,13 @@
 # compiled
 **/__pycache__/
+*.pyc
 
 # ignore models
 *.pt
 
 # ignore pretrained models
-src/models/
+src/lstm/models 
+src/lstm/data
 
 # jupyter
 **/.ipynb_checkpoints/

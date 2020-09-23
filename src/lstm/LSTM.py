@@ -3,7 +3,7 @@ import torch.nn as nn
 from Embedding import Embedder
 
 class Model(nn.Module):
-    def __init__(self, input_dim, embedding_dim, hidden_dim, num_layers, bidirectional=False):
+    def __init__(self, input_dim, embedding_dim, hidden_dim, num_layers, bidirectional=False, lang_amount = 235):
         super().__init__()
         self._bidirectional = 2 if bidirectional else 1
         self._num_layers = num_layers
@@ -17,7 +17,7 @@ class Model(nn.Module):
                              bidirectional=bidirectional, 
                              batch_first=True, dropout=0.4)
         
-        self._linear = nn.Linear(self._linear_dim, 235)
+        self._linear = nn.Linear(self._linear_dim, lang_amount )
 
     def forward(self, inputs):
         
