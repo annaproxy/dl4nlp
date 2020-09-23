@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 import torch.optim as optim
+<<<<<<< HEAD
 
 from LSTM import Model
 from data.load_data import get_wili_data, get_wili_data_bytes
@@ -15,6 +16,17 @@ from utils.utils import validate_paragraphs
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train(model, training_loader, validation_loader, validation_data, config, model_name=""):
+=======
+from LSTM import Model
+from utils.utils import *
+
+from data.load_data import get_wili_data
+from utils.config import LSTM_config
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def train(model, training_loader, validation_loader, validation_data, config):
+>>>>>>> bryan
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
