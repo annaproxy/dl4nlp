@@ -9,5 +9,8 @@
 src/lstm/models 
 src/lstm/data
 
+# ignore anna directory
+src/lstm/reports_exclude
+
 # jupyter
 **/.ipynb_checkpoints/
