@@ -1,0 +1,942 @@
+235
+ace
+
+languages:  500
+0
+afr
+
+languages:  500
+1
+als
+
+languages:  500
+2
+amh
+
+languages:  497
+3
+ang
+
+languages:  480
+4
+ara
+
+languages:  500
+5
+arg
+
+languages:  500
+6
+arz
+
+languages:  500
+7
+asm
+
+languages:  488
+8
+ast
+
+languages:  500
+9
+ava
+
+languages:  483
+10
+aym
+
+languages:  499
+11
+azb
+
+languages:  500
+12
+aze
+
+languages:  500
+13
+bak
+
+languages:  500
+14
+bar
+
+languages:  498
+15
+bcl
+
+languages:  488
+16
+be-tarask
+
+languages:  500
+17
+bel
+
+languages:  498
+18
+ben
+
+languages:  497
+19
+bho
+
+languages:  487
+20
+bjn
+
+languages:  499
+21
+bod
+
+languages:  499
+22
+bos
+
+languages:  499
+23
+bpy
+
+languages:  500
+24
+bre
+
+languages:  500
+25
+bul
+
+languages:  499
+26
+bxr
+
+languages:  494
+27
+cat
+
+languages:  499
+28
+cbk
+
+languages:  445
+29
+cdo
+
+languages:  500
+30
+ceb
+
+languages:  500
+31
+ces
+
+languages:  498
+32
+che
+
+languages:  500
+33
+chr
+
+languages:  497
+34
+chv
+
+languages:  499
+35
+ckb
+
+languages:  500
+36
+cor
+
+languages:  500
+37
+cos
+
+languages:  499
+38
+crh
+
+languages:  499
+39
+csb
+
+languages:  499
+40
+cym
+
+languages:  499
+41
+dan
+
+languages:  498
+42
+deu
+
+languages:  500
+43
+diq
+
+languages:  497
+44
+div
+
+languages:  500
+45
+dsb
+
+languages:  500
+46
+dty
+
+languages:  500
+47
+egl
+
+languages:  500
+48
+ell
+
+languages:  499
+49
+eng
+
+languages:  500
+50
+epo
+
+languages:  500
+51
+est
+
+languages:  497
+52
+eus
+
+languages:  500
+53
+ext
+
+languages:  496
+54
+fao
+
+languages:  499
+55
+fas
+
+languages:  500
+56
+fin
+
+languages:  500
+57
+fra
+
+languages:  498
+58
+frp
+
+languages:  500
+59
+fry
+
+languages:  498
+60
+fur
+
+languages:  500
+61
+gag
+
+languages:  500
+62
+gla
+
+languages:  500
+63
+gle
+
+languages:  499
+64
+glg
+
+languages:  499
+65
+glk
+
+languages:  500
+66
+glv
+
+languages:  500
+67
+grn
+
+languages:  500
+68
+guj
+
+languages:  478
+69
+hak
+
+languages:  500
+70
+hat
+
+languages:  500
+71
+hau
+
+languages:  500
+72
+hbs
+
+languages:  500
+73
+heb
+
+languages:  500
+74
+hif
+
+languages:  481
+75
+hin
+
+languages:  498
+76
+hrv
+
+languages:  498
+77
+hsb
+
+languages:  500
+78
+hun
+
+languages:  500
+79
+hye
+
+languages:  499
+80
+ibo
+
+languages:  466
+81
+ido
+
+languages:  500
+82
+ile
+
+languages:  500
+83
+ilo
+
+languages:  496
+84
+ina
+
+languages:  499
+85
+ind
+
+languages:  497
+86
+isl
+
+languages:  500
+87
+ita
+
+languages:  499
+88
+jam
+
+languages:  499
+89
+jav
+
+languages:  497
+90
+jbo
+
+languages:  500
+91
+jpn
+
+languages:  498
+92
+kaa
+
+languages:  500
+93
+kab
+
+languages:  498
+94
+kan
+
+languages:  500
+95
+kat
+
+languages:  499
+96
+kaz
+
+languages:  499
+97
+kbd
+
+languages:  500
+98
+khm
+
+languages:  449
+99
+kin
+
+languages:  486
+100
+kir
+
+languages:  500
+101
+koi
+
+languages:  500
+102
+kok
+
+languages:  475
+103
+kom
+
+languages:  500
+104
+kor
+
+languages:  499
+105
+krc
+
+languages:  500
+106
+ksh
+
+languages:  500
+107
+kur
+
+languages:  500
+108
+lad
+
+languages:  500
+109
+lao
+
+languages:  494
+110
+lat
+
+languages:  494
+111
+lav
+
+languages:  500
+112
+lez
+
+languages:  499
+113
+lij
+
+languages:  500
+114
+lim
+
+languages:  500
+115
+lin
+
+languages:  498
+116
+lit
+
+languages:  500
+117
+lmo
+
+languages:  500
+118
+lrc
+
+languages:  500
+119
+ltg
+
+languages:  499
+120
+ltz
+
+languages:  500
+121
+lug
+
+languages:  499
+122
+lzh
+
+languages:  500
+123
+mai
+
+languages:  497
+124
+mal
+
+languages:  499
+125
+map-bms
+
+languages:  499
+126
+mar
+
+languages:  495
+127
+mdf
+
+languages:  500
+128
+mhr
+
+languages:  500
+129
+min
+
+languages:  500
+130
+mkd
+
+languages:  498
+131
+mlg
+
+languages:  499
+132
+mlt
+
+languages:  497
+133
+mon
+
+languages:  500
+134
+mri
+
+languages:  500
+135
+mrj
+
+languages:  500
+136
+msa
+
+languages:  494
+137
+mwl
+
+languages:  500
+138
+mya
+
+languages:  500
+139
+myv
+
+languages:  500
+140
+mzn
+
+languages:  500
+141
+nan
+
+languages:  500
+142
+nap
+
+languages:  500
+143
+nav
+
+languages:  500
+144
+nci
+
+languages:  500
+145
+nds
+
+languages:  500
+146
+nds-nl
+
+languages:  500
+147
+nep
+
+languages:  499
+148
+new
+
+languages:  491
+149
+nld
+
+languages:  500
+150
+nno
+
+languages:  500
+151
+nob
+
+languages:  498
+152
+nrm
+
+languages:  500
+153
+nso
+
+languages:  484
+154
+oci
+
+languages:  499
+155
+olo
+
+languages:  500
+156
+ori
+
+languages:  489
+157
+orm
+
+languages:  495
+158
+oss
+
+languages:  500
+159
+pag
+
+languages:  484
+160
+pam
+
+languages:  494
+161
+pan
+
+languages:  499
+162
+pap
+
+languages:  499
+163
+pcd
+
+languages:  495
+164
+pdc
+
+languages:  492
+165
+pfl
+
+languages:  499
+166
+pnb
+
+languages:  500
+167
+pol
+
+languages:  499
+168
+por
+
+languages:  498
+169
+pus
+
+languages:  489
+170
+que
+
+languages:  500
+171
+roa-tara
+
+languages:  500
+172
+roh
+
+languages:  500
+173
+ron
+
+languages:  498
+174
+rue
+
+languages:  500
+175
+rup
+
+languages:  496
+176
+rus
+
+languages:  499
+177
+sah
+
+languages:  499
+178
+san
+
+languages:  499
+179
+scn
+
+languages:  500
+180
+sco
+
+languages:  492
+181
+sgs
+
+languages:  500
+182
+sin
+
+languages:  490
+183
+slk
+
+languages:  500
+184
+slv
+
+languages:  500
+185
+sme
+
+languages:  500
+186
+sna
+
+languages:  487
+187
+snd
+
+languages:  498
+188
+som
+
+languages:  500
+189
+spa
+
+languages:  499
+190
+sqi
+
+languages:  500
+191
+srd
+
+languages:  500
+192
+srn
+
+languages:  499
+193
+srp
+
+languages:  497
+194
+stq
+
+languages:  500
+195
+sun
+
+languages:  493
+196
+swa
+
+languages:  491
+197
+swe
+
+languages:  500
+198
+szl
+
+languages:  500
+199
+tam
+
+languages:  500
+200
+tat
+
+languages:  500
+201
+tcy
+
+languages:  500
+202
+tel
+
+languages:  485
+203
+tet
+
+languages:  490
+204
+tgk
+
+languages:  500
+205
+tgl
+
+languages:  492
+206
+tha
+
+languages:  498
+207
+ton
+
+languages:  500
+208
+tsn
+
+languages:  495
+209
+tuk
+
+languages:  500
+210
+tur
+
+languages:  497
+211
+tyv
+
+languages:  500
+212
+udm
+
+languages:  500
+213
+uig
+
+languages:  500
+214
+ukr
+
+languages:  500
+215
+urd
+
+languages:  496
+216
+uzb
+
+languages:  500
+217
+vec
+
+languages:  500
+218
+vep
+
+languages:  500
+219
+vie
+
+languages:  496
+220
+vls
+
+languages:  500
+221
+vol
+
+languages:  500
+222
+vro
+
+languages:  500
+223
+war
+
+languages:  499
+224
+wln
+
+languages:  500
+225
+wol
+
+languages:  500
+226
+wuu
+
+languages:  496
+227
+xho
+
+languages:  489
+228
+xmf
+
+languages:  496
+229
+yid
+
+languages:  500
+230
+yor
+
+languages:  464
+231
+zea
+
+languages:  499
+232
+zh-yue
+
+languages:  478
+233
+zho
+
+languages:  499
+234
+

@@ -60,6 +60,7 @@ def main():
 
     # Load Data
     training_data, validation_data = get_wili_data(config)
+    
 
 
     training_loader = DataLoader(training_data,
