@@ -9,7 +9,7 @@ from torchvision import datasets
 import json
 
 class WiliDataLoader(Dataset):
-    def __init__(self, data_path, label_path, sequence_length=32, predict=False, predict_offset=10):
+    def __init__(self, data_path, label_path, sequence_length=32, predict=False, predict_offset=50):
 
         self.data_path = data_path
         self.label_path = label_path

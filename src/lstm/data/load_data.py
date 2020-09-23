@@ -15,7 +15,7 @@ def get_wili_data(config):
                           label_path=label_path,
                           sequence_length=config.sequence_length
                          )
-
+    raise ValueError()
     val_data = WiliDataLoader(data_path=val_data_path,
                           label_path=val_label_path,
                           sequence_length=config.sequence_length

@@ -3,6 +3,7 @@ import torch
 import datetime
 import torch.nn as nn
 from sklearn.metrics import classification_report
+import pandas as pd
 
 device = torch.device("cuda" if torch.cuda.is_available else "cpu")
 
@@ -19,7 +20,7 @@ def get_paragraph_prediction(outputs, labels):
 
 def validate_paragraphs(model, validation_data, validation_loader, save_classification_report=True, subset=True):
     n_batches = len(validation_loader)
-    if subset: n_batches = 1000
+    if subset: n_batches = 500
     validation_data.predict_paragraph(True)
     y_pred = []; y_true = [];
     accuracies = []
@@ -41,7 +42,7 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
 
     accuracy = round(np.sum(accuracies)/(n_batches),4)
     if save_classification_report:
-        with open("classification_report.txt", 'w') as file:
-            target_names = validation_data.languages
-            file.write(classification_report(y_true, y_pred, target_names=target_names))
+        target_names = validation_data.languages
+        df = pd.DataFrame(classification_report(y_true, y_pred, target_names=target_names, output_dict=True)).transpose()
+        df.to_csv('classification_report_charclean.csv', index= True)
     return accuracy
