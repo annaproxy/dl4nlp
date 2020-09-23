@@ -4,7 +4,7 @@ def LSTM_config():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--input', type=str, default='chars', help='Kind of input: [chars|bytes]')
-    parser.add_argument('--batch_size', type=int, default=2048)
+    parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument('--sequence_length', type=int, default=42)
 
     parser.add_argument('--input_dim', type=int, default=12300)

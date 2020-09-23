@@ -42,63 +42,15 @@ class WiliDataLoader(Dataset):
         Skipping the "/n" token.
 
         """
-
         with open(self.data_path, 'r') as f:
             lines = f.readlines()
-        #lines = [list(paragraph)[:-1] for paragraph in lines]
+        lines = [list(paragraph)[:-1] for paragraph in lines]
 
         with open(self.label_path, 'r') as f:
             languages = f.readlines()
-        languages = [language for language in languages]
+        languages = [language[:-1] for language in languages]
 
         print('Loaded language paragraphs from: %s (%d)' % (self.data_path, len(lines)))
-
-        lang_np = np.array(languages)
-        print(lang_np.shape)
-        #lines = np.array(lines)
-        langs = list(set(languages))
-        langs.sort()
-        print(len(langs))
-        val_set_idx = []
-        train_set_idx = []
-        for i, language in enumerate(langs):
-            print(language)
-            language_idx = np.where(lang_np==language)[0]
-            n_points_langs = language_idx.shape[0]
-            print("languages: ", n_points_langs)
-            random_set = np.random.permutation(n_points_langs)
-            val = language_idx[random_set[:int(n_points_langs*0.2)]]
-            train = language_idx[random_set[int(n_points_langs*0.2):]]
-            val_set_idx.append(val)
-            train_set_idx.append(train)
-            print(i)
-
-
-        #raise ValueError()
-        with open("x_val_sub_clean.txt", 'w') as f:
-            for val_idx in val_set_idx:
-                for idx in val_idx:
-                    para = lines[idx]
-                    f.write(para)
-
-        with open("y_val_sub_clean.txt", 'w') as f:
-            for val_idx in val_set_idx:
-                y_subset = lang_np[val_idx]
-                for lang in y_subset:
-                        f.write(lang)
-
-
-        with open("x_train_sub_clean.txt", 'w') as f:
-            for train_idx in train_set_idx:
-                for idx in train_idx:
-                    para = lines[idx]
-                    f.write(para)
-
-        with open("y_train_sub_clean.txt", 'w') as f:
-            for train_idx in train_set_idx:
-                y_subset = lang_np[train_idx]
-                for lang in y_subset:
-                        f.write(lang)
 
         return lines, languages
 
@@ -135,30 +87,32 @@ class WiliDataLoader(Dataset):
 
     def __len__(self):
         return len(self.lines)
+
+        
 class WiliBytesDataLoader(Dataset):
     def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=20):
 
         self.data_path = data_path
         self.label_path = label_path
         self.sequence_length = sequence_length
-                
+
         self.lines, self.line_languages = self.load_lines()
-        
+
         self.languages = sorted(list(set(self.line_languages)))
         print("Number of languages: ", len(self.languages))
-        
+
         self.lang_to_idx = { l:i for i,l in enumerate(self.languages) }
-        self.idx_to_lang = { i:l for i,l in enumerate(self.languages) }        
-        
+        self.idx_to_lang = { i:l for i,l in enumerate(self.languages) }
+
         self.vocab_dict = json.load(open('./data/vocabs/full_bytes_vocab.json'))
         self.vocab_list = [key for key in self.vocab_dict]
         self.vocab_size = len(self.vocab_list)
-        
+
         print("Vocabulary of size: {}".format(self.vocab_size))
 
         self.predict = False
         self.prediction_offset = predict_offset
-        
+
 
     def load_lines(self):
         """
@@ -167,12 +121,12 @@ class WiliBytesDataLoader(Dataset):
         with open(self.data_path, 'r') as f:
             lines = f.readlines()
         lines = [[int(ch) for ch in paragraph.split()] for paragraph in lines]
-        
+
         with open(self.label_path, 'r') as f:
             languages = f.readlines()
         languages = [language[:-1] for language in languages]
         #languages = ['eng' if lan == 'eng' else 'noneng' for lan in languages]
-        
+
         print('Loaded language paragraphs from: %s (%d)' % (self.data_path, len(lines)))
 
         return lines, languages
@@ -185,13 +139,13 @@ class WiliBytesDataLoader(Dataset):
         """
         paragraph, language = self.lines[index], self.line_languages[index]
         paragraph_length = len(paragraph)
-        
+
         offset = np.random.randint(0, paragraph_length-self.sequence_length)
         inputs = np.array([ch for ch in paragraph[offset:offset+self.sequence_length]])
         target = self.lang_to_idx[language]
-        
+
         return inputs, target
-        
+
     def predict_paragraph(self, predict=False):
         self.predict = predict
 
@@ -219,4 +173,4 @@ class WiliBytesDataLoader(Dataset):
                 target.append(self.lang_to_idx[language])
             inputs = np.array(inputs); target = np.array(target);
 
-        return inputs, target #, index 
+        return inputs, target #, index

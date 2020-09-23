@@ -1,6 +1,6 @@
 
 from torch.utils.data import DataLoader
-from data.load_data import get_wili_data
+from data.load_data import get_wili_data, get_wili_data_bytes
 
 import os
 import sys
@@ -31,7 +31,13 @@ def main():
 
     model = GPT2LMHeadModel(gpt_config)
     # Load Data
-    _, validation_data = get_wili_data(param_config)
+    # Load Data
+    if param_config.input == 'bytes':
+        # Load Data for bytes
+        _, validation_data = get_wili_data_bytes(param_config)
+    else:
+        # Load Data
+        _, validation_data = get_wili_data(param_config)
 
     validation_loader = DataLoader(validation_data,
                              batch_size=1,

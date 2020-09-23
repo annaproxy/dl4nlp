@@ -89,3 +89,94 @@ class WiliDataLoader(Dataset):
 
     def __len__(self):
         return len(self.lines)
+
+
+class WiliBytesDataLoader(Dataset):
+    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=10):
+
+        self.data_path = data_path
+        self.label_path = label_path
+        self.sequence_length = sequence_length
+
+        self.lines, self.line_languages = self.load_lines()
+
+        self.languages = sorted(list(set(self.line_languages)))
+        print("Number of languages: ", len(self.languages))
+
+        self.lang_to_idx = { l:i for i,l in enumerate(self.languages) }
+        self.idx_to_lang = { i:l for i,l in enumerate(self.languages) }
+
+        self.vocab_dict = json.load(open('./data/vocabs/full_bytes_vocab.json'))
+        self.vocab_list = [key for key in self.vocab_dict]
+        self.vocab_size = len(self.vocab_list)
+
+        print("Vocabulary of size: {}".format(self.vocab_size))
+
+        self.predict = False
+        self.prediction_offset = predict_offset
+
+
+    def load_lines(self):
+        """
+        Each line is a list of integers that represent subwords
+        """
+        with open(self.data_path, 'r') as f:
+            lines = f.readlines()
+        lines = [[int(ch) for ch in paragraph.split()] for paragraph in lines]
+
+        with open(self.label_path, 'r') as f:
+            languages = f.readlines()
+        languages = [language[:-1] for language in languages]
+        #languages = ['eng' if lan == 'eng' else 'noneng' for lan in languages]
+
+        print('Loaded language paragraphs from: %s (%d)' % (self.data_path, len(lines)))
+
+        return lines, languages
+
+
+    def __oldgetitem__(self, index):
+        """
+        Get the paragraph (line) and corresponding language.
+        Get a random sequence of sequence length within that paragraph.
+        """
+        paragraph, language = self.lines[index], self.line_languages[index]
+        paragraph_length = len(paragraph)
+
+        offset = np.random.randint(0, paragraph_length-self.sequence_length)
+        inputs = np.array([ch for ch in paragraph[offset:offset+self.sequence_length]])
+        target = self.lang_to_idx[language]
+
+        return inputs, target
+
+    def predict_paragraph(self, predict=False):
+        self.predict = predict
+
+    def __getitem__(self, index):
+        """
+        Get the paragraph (line) and corresponding language.
+        Get a random sequence of sequence length within that paragraph.
+        """
+        paragraph, language = self.lines[index], self.line_languages[index]
+        paragraph_length = len(paragraph)
+        inputs = []; target = [];
+        if not self.predict:
+
+            offset = np.random.randint(0, paragraph_length-self.sequence_length)
+            inputs = np.array([ch for ch in paragraph[offset:offset+self.sequence_length]])
+            target = self.lang_to_idx[language]
+
+        else:
+            offset = self.prediction_offset
+            offset_space = paragraph_length - self.sequence_length
+            #n_sequences = offset_space // offset
+
+            for i in range(0,offset_space, offset):
+                inputs.append(np.array([ch for ch in paragraph[i:i+self.sequence_length]]))
+                target.append(self.lang_to_idx[language])
+            inputs = np.array(inputs); target = np.array(target);
+
+        return inputs, target #, index 
+
+    
+    def __len__(self):
+        return len(self.lines)

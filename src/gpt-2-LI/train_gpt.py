@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 import torch.optim as optim
-from data.load_data import get_wili_data
+from data.load_data import get_wili_data, get_wili_data_bytes
 
 import os
 import sys
@@ -35,14 +35,13 @@ def train(model, training_loader, validation_loader, validation_data, config):
             optimizer.zero_grad()
 
             output = model(inputs)
-            #output = output.view(-1, output.size(-1))
 
             loss = criterion(output, labels)
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
 
-            if  (i+1) % 51 == 0:
+            if  (i+1) % 11 == 0:
                 print('%d iterations' % (i+1))
                 avg = np.mean(train_loss[-50:])
                 avg_train_loss.append(avg)
@@ -52,7 +51,7 @@ def train(model, training_loader, validation_loader, validation_data, config):
                 #print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
                 #model.train()
                 #torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(accuracy)+".pt")
-                torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+".pt")
+                #torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+".pt")
 
         scheduler.step()
         torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(accuracy)+".pt")
@@ -79,7 +78,12 @@ def main():
     model.to(device)
 
     # Load Data
-    training_data, validation_data = get_wili_data(param_config)
+    if param_config.input == 'bytes':
+        # Load Data for bytes
+        training_data, validation_data = get_wili_data_bytes(param_config)
+    else:
+        # Load Data
+        training_data, validation_data = get_wili_data(param_config)
 
 
     training_loader = DataLoader(training_data,

@@ -1,5 +1,5 @@
 import numpy as np
-import sys 
+import sys
 
 import torch
 import torch.nn as nn
@@ -54,11 +54,11 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
 def main():
 
     config = LSTM_config()
-    
+
 
 
     if config.input == 'bytes':
-        # Load Data for bytes 
+        # Load Data for bytes
         training_data, validation_data = get_wili_data_bytes(config)
     else:
         # Load Data
