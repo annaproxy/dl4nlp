@@ -16,6 +16,8 @@ from sklearn.metrics import classification_report
 
 import torch
 
+# import pdb; pdb.set_trace()
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Data():
@@ -28,8 +30,14 @@ class Data():
         rd.Random(fixed_seed).shuffle(data)
         rd.Random(fixed_seed).shuffle(labels)
 
-        data_batches = self.grouper(data, 100)
-        labels_batches = self.grouper(labels, 100)
+        data_batches = self.grouper(data, args.batch_size)
+        labels_batches = self.grouper(labels, args.batch_size)
+
+        if len(data) % args.batch_size != 0:
+            data_batches[-1] = [paragraph for paragraph in data_batches[-1]
+                                if paragraph is not None]
+            labels_batches[-1] = [label for label in labels_batches[-1]
+                                  if label is not None]
 
         self.data_batches = data_batches
         self.labels_batches = labels_batches
@@ -65,7 +73,7 @@ class Data():
         return contents
 
     @staticmethod
-    def grouper(data, n, fillvalue=None):
+    def grouper(data, n):
         """ Create batches of data.
 
         Parameters
@@ -83,7 +91,7 @@ class Data():
             a list of batches
         """
         iters = [iter(data)] * n
-        return list(it.zip_longest(*iters, fillvalue=fillvalue))
+        return list(it.zip_longest(*iters))
 
     def bag_of_words(self, data):
         """ Create character level bag of words embedding.
@@ -162,7 +170,7 @@ def train(data, model):
                 print('[epoch %f, iteration %5d] loss: %.3f' %
                       (int(epoch) + 1, i + 1, running_loss / 300))
                 running_loss = 0.0
-        torch.save(model.state_dict(), args.m_dir + args.model)
+        torch.save(model.state_dict(), args.m_dir + args.output + ".pt")
         data.reset_next_batch()
 
 def test(data, model):
@@ -197,10 +205,10 @@ def main():
     if args.mode == "train":
         train(data, model)
     elif args.mode == "test":
-        model.load_state_dict(torch.load(args.m_dir + args.model))
+        model.load_state_dict(torch.load(args.m_dir + args.output + ".pt"))
         report = test(data, model)
         df = pd.DataFrame(report).transpose()
-        df.to_csv("classification_report_hidden_layer.csv", index=True)
+        df.to_csv("classification_report_" + args.output + ".csv", index=True)
     else:
         raise ValueError("Invalid value for argument mode")
 
@@ -218,12 +226,14 @@ if __name__ == '__main__':
                         help="file vocabulary will be loaded from")
     parser.add_argument("-m_dir", default="../models/linear/",
                         help="directory the model is saved in")
-    parser.add_argument("-output", default="hidden_layer_model.pt",
+    parser.add_argument("-output", default="hidden_layer_model",
                         help="file model is saved to")
     parser.add_argument("-mode", default="train",
                         help="train or test")
-    parser.add_argument("-model", default="linreg",
+    parser.add_argument("-model", default="hidlay",
                         help="'linreg' for linear regression or 'hidlay' for hidden layer")
+    parser.add_argument("-batch_size", type=int, default=100,
+                        help="... you really need help with this one?")
     args = parser.parse_args()
 
     main()
