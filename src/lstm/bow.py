@@ -126,6 +126,17 @@ class LinearRegressionModel(torch.nn.Module):
         y_pred = self.linear(x)
         return y_pred
 
+class ExtraLinear(torch.nn.Module):
+    def __init__(self, in_features, out_features):
+        super(ExtraLinear, self).__init__()
+        self.linear1 = torch.nn.Linear(in_features, 512)
+        self.linear2 = torch.nn.Linear(512, out_features)
+
+    def forward(self, x):
+        linear1 = self.linear1(x)
+        y_pred = self.linear2(linear1)
+        return y_pred
+
 def train(data, model):
     model.train()
     criterion = torch.nn.CrossEntropyLoss()
@@ -148,8 +159,8 @@ def train(data, model):
 
             running_loss += loss.item()
             if (i + 1) % 300 == 0:
-                print('[%f %5d] loss: %.3f' %
-                      (epoch, i + 1, running_loss / 300))
+                print('[epoch %f, iteration %5d] loss: %.3f' %
+                      (int(epoch) + 1, i + 1, running_loss / 300))
                 running_loss = 0.0
         torch.save(model.state_dict(), args.m_dir + args.model)
         data.reset_next_batch()
@@ -174,7 +185,13 @@ def test(data, model):
 
 def main():
     data = Data()
-    model = LinearRegressionModel(len(data.vocabulary), len(data.languages))
+
+    if args.model == "linreg":
+        model = LinearRegressionModel(len(data.vocabulary), len(data.languages))
+    elif args.model == "hidlay":
+        model = ExtraLinear(len(data.vocabulary), len(data.languages))
+    else:
+        raise ValueError("Not sure what model you want to use.")
     model = model.to(device)
 
     if args.mode == "train":
@@ -183,10 +200,9 @@ def main():
         model.load_state_dict(torch.load(args.m_dir + args.model))
         report = test(data, model)
         df = pd.DataFrame(report).transpose()
-        df.to_csv("classification_report_baseline.csv", index= True)
+        df.to_csv("classification_report_hidden_layer.csv", index=True)
     else:
         raise ValueError("Invalid value for argument mode")
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -200,12 +216,14 @@ if __name__ == '__main__':
                         help="directory of vocab file")
     parser.add_argument("-vocab", default="full_vocab.json",
                         help="file vocabulary will be loaded from")
-    parser.add_argument("-m_dir", default="./models/LR/",
+    parser.add_argument("-m_dir", default="../models/linear/",
                         help="directory the model is saved in")
-    parser.add_argument("-model", default="lr_model.pt",
-                        help="name of model")
+    parser.add_argument("-output", default="hidden_layer_model.pt",
+                        help="file model is saved to")
     parser.add_argument("-mode", default="train",
                         help="train or test")
+    parser.add_argument("-model", default="linreg",
+                        help="'linreg' for linear regression or 'hidlay' for hidden layer")
     args = parser.parse_args()
 
     main()
