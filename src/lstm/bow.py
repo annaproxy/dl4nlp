@@ -15,6 +15,7 @@ from tqdm import tqdm
 from sklearn.metrics import classification_report
 
 import torch
+import torch.nn as nn
 
 # import pdb; pdb.set_trace()
 
@@ -125,10 +126,44 @@ class Data():
         self.next_batch += 1
         return self.bag_of_words(batch), labels.long()
 
+class KL(nn.Module):
+    def __init__(self, divisor=2):
+        super().__init__()
+        self.c1 = 1.16145124
+        self.c2 = -1.50204118
+        self.c3 = 0.58629921
+        self.divisor = divisor
+
+    def forward(self, alpha):
+        return (0.5*alpha.log() + self.c1*alpha + self.c2*alpha**2 + self.c3*alpha**3) / self.divisor
+
+class BayesianDropout(nn.Module):
+    """
+    We follow Max and Kingma paper "Variational Dropout and the Local Reparameterization Trick" (2015)
+    Here alpha should be p / (1-p), as shown in the paper.
+
+    """
+    def __init__(self, dropout_rate, weight_dim, cuda=True):
+        super().__init__()
+        self.weight_dim = weight_dim
+        alpha = dropout_rate / (1 - dropout_rate)
+        self.alpha = alpha
+        self.cuda = cuda
+        self._alpha = nn.Parameter(torch.ones(weight_dim)*alpha)
+
+    def forward(self, x):
+        # Unit Gaussian prior
+        noise = torch.autograd.Variable(torch.randn(x.shape)).to(torch.device('cuda' if self.cuda else "cpu"))
+
+        # max=1.0 corresponds with a dropout rate of 0.5 (section 3.3)
+        self._alpha.data = torch.clamp(self._alpha.data, max=1.0)
+        noise *= self._alpha
+        return x * noise
+
 class LinearRegressionModel(torch.nn.Module):
     def __init__(self, in_features, out_features):
         super(LinearRegressionModel, self).__init__()
-        self.linear = torch.nn.Linear(in_features, out_features)
+        self.linear = nn.Linear(in_features, out_features)
 
     def forward(self, x):
         y_pred = self.linear(x)
@@ -137,19 +172,23 @@ class LinearRegressionModel(torch.nn.Module):
 class ExtraLinear(torch.nn.Module):
     def __init__(self, in_features, out_features):
         super(ExtraLinear, self).__init__()
-        self.linear1 = torch.nn.Linear(in_features, 512)
-        self.linear2 = torch.nn.Linear(512, out_features)
+        self.linear1 = nn.Linear(in_features, 512)
+        # self.dropout = BayesianDropout(0.5, 512)
+        self.non_linear = nn.ReLU()
+        self.linear2 = nn.Linear(512, out_features)
 
     def forward(self, x):
         linear1 = self.linear1(x)
-        y_pred = self.linear2(linear1)
+        # linear1 = self.dropout(linear1)
+        non_linear = self.non_linear(linear1)
+        y_pred = self.linear2(non_linear)
         return y_pred
 
 def train(data, model):
     model.train()
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(params=model.parameters())
-
+    # kl = KL(divisor=50)
     for epoch in range(100):
         running_loss = 0.0
         for i in tqdm(range(data.num_batches)):
@@ -158,9 +197,14 @@ def train(data, model):
             labels = labels.to(device)
 
             prediction = model.forward(batch)
+            # _alpha = model.dropout._alpha
+            # kl_divergence = torch.sum(kl(_alpha))
+            # print("KL:",kl_divergence.item())
 
             optimizer.zero_grad()
             loss = criterion(prediction, labels)
+            # print("CROSS LOSS: ", cross.item())
+            # loss =  cross + kl_divergence
             loss.backward()
             optimizer.step()
             # print('epoch {}, it {}, loss {}'.format(epoch, i, loss.item()))
@@ -216,9 +260,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-in_dir", default="./data/wili-2018/",
                         help="directory of input file")
-    parser.add_argument("-data", default="x_train_sub.txt",
+    parser.add_argument("-data", default="x_train_sub_clean.txt",
                         help="input file containing train data")
-    parser.add_argument("-labels", default="y_train_sub.txt",
+    parser.add_argument("-labels", default="y_train_sub_clean.txt",
                         help="input file containing labels for train data")
     parser.add_argument("-v_dir", default="./data/vocabs/",
                         help="directory of vocab file")
@@ -226,7 +270,7 @@ if __name__ == '__main__':
                         help="file vocabulary will be loaded from")
     parser.add_argument("-m_dir", default="../models/linear/",
                         help="directory the model is saved in")
-    parser.add_argument("-output", default="hidden_layer_model",
+    parser.add_argument("-output", default="hidden_layer_model_clean",
                         help="file model is saved to")
     parser.add_argument("-mode", default="train",
                         help="train or test")
