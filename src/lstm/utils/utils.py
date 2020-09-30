@@ -64,10 +64,12 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
         #        continue
 
             #for n in range(30):
-            logits = model(inputs, True)
+            logits = model(inputs, False)
             probs = get_mean_softmax(logits)
-            output = torch.argmax(probs,dim=1).view(-1)
-            prediction = get_paragraph_prediction(output, labels)
+            #output = torch.argmax(logits,dim=1).view(-1)
+            prediction = torch.argmax(probs)
+            #prediction = get_paragraph_prediction(output, labels)
+            #print(prediction)
             #    print(validation_data.idx_to_lang[prediction.item()])
             #raise ValueError()
             y_pred.append(prediction.item())
@@ -80,6 +82,7 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
             #        #print(i, validation_data.idx_to_lang[lang_true], pars[i])
             #        wrong_english_indices.append(i)
             correct = (prediction == labels[0].item()).float()
+            """
             entropy, probs = get_entropy(logits)
             probs = probs.cpu().numpy()
 
@@ -101,9 +104,7 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
 
                 #ax.bar(langs,probs.cpu().numpy()[:10])
                 #plt.show()
-
-
-
+            """
             accuracies.append(correct.item())
             if i == n_batches: break
     #print(len(wrong_english_indices))
