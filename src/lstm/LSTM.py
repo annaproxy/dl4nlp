@@ -2,6 +2,105 @@ import torch
 import torch.nn as nn
 #from Embedding import Embedder
 
+class VariationalDropout(nn.Module):
+    def __init__(self, alpha=1.0, dim=None):
+        super(VariationalDropout, self).__init__()
+
+        self.dim = dim
+        self.max_alpha = alpha
+        # Initial alpha
+        log_alpha = (torch.ones(dim) * alpha).log()
+        self.log_alpha = nn.Parameter(log_alpha)
+
+    def kl(self):
+        c1 = 1.16145124
+        c2 = -1.50204118
+        c3 = 0.58629921
+
+        alpha = self.log_alpha.exp()
+
+        negative_kl = 0.5 * self.log_alpha + c1 * alpha + c2 * alpha**2 + c3 * alpha**3
+
+        kl = -negative_kl
+
+        return kl.mean()
+
+    def forward(self, x, train):
+        """
+        Sample noise   e ~ N(1, alpha)
+        Multiply noise h = h_ * e
+        """
+        #train = True
+        if train:
+            # N(0,1)
+            epsilon = torch.randn(x.size()).to("cuda")
+            if x.is_cuda:
+                epsilon = epsilon.cuda()
+
+            # Clip alpha
+            #self.log_alpha.data = torch.clamp(self.log_alpha.data, max=self.max_alpha)
+            alpha = self.log_alpha.exp().to("cuda")
+
+
+            # N(1, alpha)
+            epsilon = epsilon * alpha
+            print("========================")
+            print("ALPHA: ", self.log_alpha)
+            print("epsilons: ", epsilon.mean())
+            print()
+            print("X input: ", x.mean())
+            #print(epsilon)
+            #print(x)
+            return x * epsilon
+        else:
+            return x
+
+def dropout(p=None, dim=None, method='standard'):
+    if method == 'standard':
+        return nn.Dropout(p)
+    elif method == 'gaussian':
+        return GaussianDropout(p/(1-p))
+    elif method == 'variational':
+        return VariationalDropout(p/(1-p), dim)
+
+class KL(nn.Module):
+    def __init__(self, divisor=2):
+        super().__init__()
+        self.c1 = 1.16145124
+        self.c2 = -1.50204118
+        self.c3 = 0.58629921
+        self.divisor = divisor
+
+    def forward(self, log_alpha):
+        alpha = torch.exp(log_alpha)
+        divergence = -(0.5*log_alpha + self.c1*alpha + self.c2*alpha**2 + self.c3*alpha**3) / self.divisor
+        return divergence.mean()
+
+class BayesianDropout(nn.Module):
+    """
+    We follow Max and Kingma paper "Variational Dropout and the Local Reparameterization Trick" (2015)
+    Here alpha should be p / (1-p), as shown in the paper.
+
+    """
+    def __init__(self, dropout_rate, weight_dim, cuda=True):
+        super().__init__()
+        self.weight_dim = weight_dim
+        alpha = dropout_rate / (1 - dropout_rate)
+        self.alpha = alpha
+        self.cuda = cuda
+        self._log_alpha = nn.Parameter(torch.log(torch.ones(weight_dim)*alpha), requires_grad=True)
+
+    def forward(self, x, eval=False):
+        # Unit Gaussian prior
+        if eval: return x
+        noise = torch.randn(x.shape).to(torch.device('cuda' if self.cuda else "cpu"))
+
+        # max=1.0 corresponds with a dropout rate of 0.5 (section 3.3)
+        self._log_alpha.data = torch.clamp(self._log_alpha.data, max=1.0)
+        noise *= torch.exp(self._log_alpha)
+        return x * noise
+
+
 class Embedder(nn.Module):
     def __init__(self, input_dim, embedding_dim, train_embedding=True, load_embeddings=True):
         super().__init__()
@@ -19,7 +118,7 @@ class Embedder(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, input_dim, embedding_dim, hidden_dim, num_layers, bidirectional=False, lang_amount = 235, load_embeddings=True):
+    def __init__(self, input_dim, embedding_dim, hidden_dim, num_layers, bidirectional=False, lang_amount=235, load_embeddings=True):
         super().__init__()
         self._bidirectional = 2 if bidirectional else 1
         self._num_layers = num_layers
@@ -34,15 +133,31 @@ class Model(nn.Module):
                              bidirectional=bidirectional,
                              batch_first=True, dropout=0.4)
 
-        self._linear = nn.Linear(self._linear_dim, lang_amount )
+        self._linear1 = nn.Linear(self._linear_dim, 256)
+        #self._bayesian = dropout(0.5, 300, "variational")
+        self._bayesian = BayesianDropout(0.5, 256)
+        self._relu = nn.ReLU()
 
-    def forward(self, inputs):
+        self._linear = nn.Linear(256, lang_amount)
+
+    def kl(self):
+        kl = 0
+
+        kl = self._bayesian.kl().sum()
+        return kl
+
+    def forward(self, inputs, eval=False):
 
         inputs = self._embedding(inputs)
 
         # use the individual characters for additional classification?
         _, (h_n, _) = self._lstm(inputs)
         h_n = h_n.permute(1,0,2).contiguous().view(h_n.shape[1], self._linear_dim)
-        logits = self._linear(h_n)
+        h_n = self._linear1(h_n)
+        bayesian_dropout = self._bayesian(h_n, eval)
+        bayesian_dropout = self._relu(bayesian_dropout)
+
+        #logits = self._linear(h_n)
+        logits = self._linear(bayesian_dropout)
 
         return logits

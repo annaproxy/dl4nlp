@@ -16,13 +16,14 @@ def LSTM_config():
     parser.add_argument('--lr', type=float, default=8e-4)
     parser.add_argument('--model_checkpoint', type=str, default=None)
 
-    parser.add_argument('--data_path', type=str, default="./data/wili-2018/x_train_cleaned.txt")
-    parser.add_argument('--label_path', type=str, default="./data/wili-2018/y_train_cleaned.txt")
+    parser.add_argument('--data_path', type=str, default="./data/wili-2018/x_train_sub_clean.txt")
+    parser.add_argument('--label_path', type=str, default="./data/wili-2018/y_train_sub_clean.txt")
 
-    parser.add_argument('--val_data_path', type=str, default="./data/wili-2018/x_train_sub.txt")
-    parser.add_argument('--val_label_path', type=str, default="./data/wili-2018/y_train_sub.txt")
+    parser.add_argument('--val_data_path', type=str, default="./data/wili-2018/x_val_sub_clean.txt")
+    parser.add_argument('--val_label_path', type=str, default="./data/wili-2018/y_val_sub_clean.txt")
 
     parser.add_argument('--model_name', type=str, default="")
+    parser.add_argument('--prediction_type', type=str, default="deterministic")
 
 
     args = parser.parse_args()

@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 import torch.optim as optim
 
-from LSTM import Model
+from LSTM import Model, KL
 from data.load_data import get_wili_data, get_wili_data_bytes
 from utils.config import LSTM_config
 from utils.utils import validate_paragraphs
@@ -18,6 +18,7 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
+    kl = KL(divisor=20)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
     avg_train_loss = []
     train_loss = []
@@ -30,7 +31,16 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
             optimizer.zero_grad()
 
             output = model(inputs)
+            log_alpha = model._bayesian._log_alpha
+            #print("log alpha: ", torch.mean(log_alpha))
+            kl_divergence = kl(log_alpha)
+            #kl_divergence = model.kl()
+            print("KL Divergence, ", kl_divergence)
             loss = criterion(output, labels)
+            print("Loss: ", loss)
+
+            loss += kl_divergence #/ 5
+            print("losss: ", loss)
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
@@ -54,8 +64,6 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
 def main():
 
     config = LSTM_config()
-
-
 
     if config.input == 'bytes':
         # Load Data for bytes
