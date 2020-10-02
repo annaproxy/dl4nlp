@@ -130,9 +130,9 @@ class WiliBytesDataLoader(Dataset):
         with open(self.label_path, 'r') as f:
             languages = f.readlines()
 
-        with open('data/wili-2018/y_test.txt', 'r') as f:
-            real_languages = f.readlines()
-
+        #with open('data/wili-2018/y_test.txt', 'r') as f:
+        #    real_languages = f.readlines()
+        real_languages = languages
         self.real_languages = [language[:-1] for language in real_languages]
         languages = [language[:-1] for language in languages]
         #languages = ['eng' if lan == 'eng' else 'noneng' for lan in languages]
