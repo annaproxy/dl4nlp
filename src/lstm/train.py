@@ -18,8 +18,8 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
-    kl = KL(divisor=50)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
+    kl = KL(divisor=25)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.98)
     avg_train_loss = []
     train_loss = []
     accuracy = 0
@@ -31,16 +31,17 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
             optimizer.zero_grad()
 
             output = model(inputs)
-            log_alpha_1 = model._bayesian1._log_alpha
+            #log_alpha_1 = model._bayesian1._log_alpha
             log_alpha_2 = model._bayesian._log_alpha
-            kl1 = kl(log_alpha_1)
+            #kl1 = kl(log_alpha_1)
             kl2 = kl(log_alpha_2)
-            print("kl1: ", kl1)
+            #print("kl1: ", kl1)
             print("kl2: ", kl2)
-            kl_divergence = kl1 + kl2
-            print(kl_divergence)
+            #kl_divergence = kl1 + kl2
+            kl_divergence = kl2
+            #print(kl_divergence)
             #kl_divergence = model.kl()
-            print("KL Divergence, ", kl_divergence)
+            #print("KL Divergence, ", kl_divergence)
             loss = criterion(output, labels)
             #print("Loss: ", loss)
 
@@ -51,18 +52,18 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
             train_loss.append(loss.item())
 
             if  (i+1) % 42 == 0:
-                print("log alpha: ", log_alpha_1)
                 print('%d iterations' % (i+1))
                 avg = np.mean(train_loss[-50:])
                 avg_train_loss.append(avg)
                 print('Loss: %.3f' % avg)
                 print()
-                accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
-                print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
-                model.train()
-                torch.save(model.state_dict(), "./models/LSTM/"+model_name+str(epoch)+"_"+str(accuracy)+".pt")
+                #accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
+                #print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
+                #model.train()
+                #torch.save(model.state_dict(), "./models/LSTM/"+model_name+str(epoch)+"_"+str(accuracy)+".pt")
 
         scheduler.step()
+        torch.save(model.state_dict(), "./models/LSTM/"+model_name+str(epoch)+"_"+str(config.batch_size)+"_"+str(config.input)+"_"+str(config.sequence_length)+".pt")
         #torch.save(model.state_dict(), "./models/LSTM/"+model_name+str(epoch)+"_"+str(accuracy)+".pt")
     #write_results((avg_train_loss, val_loss, val_accuracy), model_type+"_")
     print("Iterators Done")

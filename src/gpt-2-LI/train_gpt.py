@@ -60,21 +60,22 @@ def train(model, training_loader, validation_loader, validation_data, config):
                 avg_train_loss.append(avg)
                 print('Loss: %.3f' % avg)
                 print()
-                accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
-                print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
-                model.train()
+                #accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
+                #print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
+                #model.train()
                 #torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(accuracy)+".pt")
                 #torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+".pt")
 
         scheduler.step()
-        torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(accuracy)+".pt")
+        torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(config.batch_size)+"_"+str(config.input)+".pt")
     #write_results((avg_train_loss, val_loss, val_accuracy), model_type+"_")
     print("Iterators Done")
 
 def main():
 
-    gpt_config = GPT2Config()
+
     param_config = config()
+    gpt_config = GPT2Config(vocab_size_or_config_json_file=param_config.input_dim, n_positions=param_config.sequence_length, n_ctx=param_config.sequence_length)
 
     model = GPT2LMHeadModel(gpt_config)
 
@@ -83,6 +84,7 @@ def main():
     #    print("GPT-2 Model Loaded.")
 
     #   model = load_weight(model, state_dict)
+
     if param_config.model_checkpoint is not None:
         with open(param_config.model_checkpoint, 'rb') as f:
             state_dict = torch.load(f)

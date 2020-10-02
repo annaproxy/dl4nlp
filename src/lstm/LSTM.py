@@ -12,7 +12,7 @@ class KL(nn.Module):
 
     def forward(self, log_alpha):
         alpha = torch.exp(log_alpha)
-        divergence = (0.5*log_alpha + self.c1*alpha + self.c2*alpha**2 + self.c3*alpha**3) / self.divisor
+        divergence = -(0.5*log_alpha + self.c1*alpha + self.c2*alpha**2 + self.c3*alpha**3) / self.divisor
         return divergence.mean()
 
 class BayesianDropout(nn.Module):
@@ -38,6 +38,7 @@ class BayesianDropout(nn.Module):
         # max=1.0 corresponds with a dropout rate of 0.5 (section 3.3)
         #self._log_alpha.data = torch.clamp(self._log_alpha.data, max=1.0)
         self._log_alpha.data = self._log_alpha.data.masked_fill(self._log_alpha.data > 1.0, 0)
+        self._log_alpha.data = self._log_alpha.data.masked_fill(self._log_alpha.data < -1.0, 0)
         noise *= torch.exp(self._log_alpha)
         return x * noise
 
@@ -59,13 +60,13 @@ class Embedder(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, input_dim, embedding_dim, hidden_dim, num_layers, bidirectional=False, lang_amount=235, load_embeddings=True):
+    def __init__(self, input_dim, embedding_dim, hidden_dim, num_layers, bidirectional=False, lang_amount=235, load_embeddings=False):
         super().__init__()
         self._bidirectional = 2 if bidirectional else 1
         self._num_layers = num_layers
         self._hidden_dim = hidden_dim
         self._linear_dim = self._hidden_dim*self._num_layers*self._bidirectional
-
+        hidden_layer_dim = 512
         self._embedding = Embedder(input_dim, embedding_dim, train_embedding=True, load_embeddings=load_embeddings)
 
         self._lstm = nn.LSTM(embedding_dim,
@@ -74,13 +75,13 @@ class Model(nn.Module):
                              bidirectional=bidirectional,
                              batch_first=True, dropout=0.4)
 
-        self._bayesian1 = BayesianDropout(0.5, 512)
-        self._linear1 = nn.Linear(self._linear_dim, 256)
+        #self._bayesian1 = BayesianDropout(0.5, 512)
+        self._linear1 = nn.Linear(self._linear_dim, hidden_layer_dim)
         #self._bayesian = dropout(0.5, 300, "variational")
-        self._bayesian = BayesianDropout(0.5, 256)
-        self._relu = nn.ReLU()
+        self._bayesian = BayesianDropout(0.5, hidden_layer_dim)
+        self._relu = nn.LeakyReLU(0.3)
 
-        self._linear = nn.Linear(256, lang_amount)
+        self._linear = nn.Linear(hidden_layer_dim, lang_amount)
 
     def forward(self, inputs, eval=False):
 
@@ -89,7 +90,7 @@ class Model(nn.Module):
         # use the individual characters for additional classification?
         _, (h_n, _) = self._lstm(inputs)
         h_n = h_n.permute(1,0,2).contiguous().view(h_n.shape[1], self._linear_dim)
-        h_n = self._bayesian1(h_n)
+        #h_n = self._bayesian1(h_n)
         h_n = self._linear1(h_n)
         bayesian_dropout = self._bayesian(h_n, eval)
         bayesian_dropout = self._relu(bayesian_dropout)

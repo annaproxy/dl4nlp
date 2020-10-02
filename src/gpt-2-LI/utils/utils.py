@@ -52,58 +52,57 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
     if save_classification_report:
         target_names = validation_data.languages
         df = pd.DataFrame(classification_report(y_true, y_pred, target_names=target_names, output_dict=True)).transpose()
-        df.to_csv('classification_report_charclean.csv', index= True)
+        df.to_csv('classification_report_bpe_bayes.csv', index= True)
     return accuracy
 
-def validate_paragraph(model, validation_data, validation_loader, textfile = 'data/wili-2018/x_val_sub.txt',
-    save_classification_report=True, subset=True):
-    n_batches = len(validation_loader)
-    if subset: n_batches = 1000
 
+def validate_uncertainty(model, validation_data, validation_loader):
+    n_batches = len(validation_loader)
     validation_data.predict_paragraph(True)
-    model.eval()
+    #model.eval()
+    model = model #.cpu()
     y_pred = []; y_true = [];
     accuracies = []
+
     wrong_english_indices = []
+    with open("Bayesian_Results_gpt.csv", "w") as file:
+        file.write("Data_index; predictio; label; means; std\n")
+
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(validation_loader):
             inputs = inputs.to(device).squeeze(0) #.cpu()
             labels = labels.to(device).squeeze(0) #.cpu()
 
-            logits = model(inputs, False)
-            #log_alpha = model._bayesian._log_alpha
-            #print(log_alpha)
-            #raise ValueError()
-            probs = get_mean_softmax(logits)
-            #output = torch.argmax(logits,dim=1).view(-1)
-            prediction = torch.argmax(probs)
-            #prediction = get_paragraph_prediction(output, labels)
+            datapoint_probs = torch.zeros(50,235)
+            for n in range(50):
+                logits = model(inputs, eval=False)
+                probabilities = get_mean_softmax(logits)
+                datapoint_probs[n,:] = probabilities
 
-            y_pred.append(prediction.item())
-            y_true.append(labels[0].item())
+            standard_deviations = torch.std(datapoint_probs, dim=0)
+            means = torch.mean(datapoint_probs, dim=0)
+            prediction = torch.argmax(means).item()
 
-            #lang_pred = prediction.item()
-            #lang_true = labels[0].item()
-            #if lang_pred == validation_data.lang_to_idx['eng']:
-            #    if lang_pred != lang_true:
-            #        #print(i, validation_data.idx_to_lang[lang_true], pars[i])
-            #        wrong_english_indices.append(i)
-            correct = (prediction == labels[0].item()).float()
-            accuracies.append(correct.item())
-            if i == n_batches: break
-    #print(len(wrong_english_indices))
+            label = labels[0].item()
 
-    #with open("indices_fucked_test.txt", "w") as f:
-    #    np.savetxt(f, np.array(wrong_english_indices))
+            y_pred.append(prediction)
+            y_true.append(label)
 
-    #with open ('confmatrix2.txt', 'w') as f:
-    #    np.savetxt(f, confusion_matrix(y_true, y_pred).astype(int), fmt='%i', delimiter=',')
+            correct = (prediction == label)#.float()
+
+            means = [round(mean, 6) for mean in means.cpu().numpy()]
+            std = [round(std_i, 6) for std_i in standard_deviations.cpu().numpy()]
+            with open("Bayesian_Results_gpt.csv", "a") as file:
+                file.write(str(i)+"; "+validation_data.idx_to_lang[prediction]+"; " + \
+                            validation_data.idx_to_lang[label]+"; "+str(means)+"; " + \
+                            str(std)+"\n")
+
+            accuracies.append(correct)
+            print(i)
+
     accuracy = round(np.sum(accuracies)/(n_batches),4)
-
+    target_names = validation_data.languages
+    df = pd.DataFrame(classification_report(y_true, y_pred, target_names=target_names, output_dict=True)).transpose()
+    df.to_csv('classification_report_uncertainty.csv', index= True)
     print(accuracy)
-
-    if save_classification_report:
-        target_names = validation_data.languages
-        df = pd.DataFrame(classification_report(y_true, y_pred, target_names=target_names, output_dict=True)).transpose()
-        df.to_csv('classification_report_kl_lstm.csv', index= True)
     return accuracy
