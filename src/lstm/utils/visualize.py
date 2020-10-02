@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import pandas as pd 
 df_gpt_char = pd.read_csv('../gpt_report.txt', delimiter='\t')
 df_lstm_char = pd.read_csv('../bryan_newest.txt', delimiter='\t')
