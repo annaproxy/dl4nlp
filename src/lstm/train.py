@@ -18,7 +18,7 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
-    kl = KL(divisor=20)
+    kl = KL(divisor=50)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
     avg_train_loss = []
     train_loss = []
@@ -31,21 +31,27 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
             optimizer.zero_grad()
 
             output = model(inputs)
-            log_alpha = model._bayesian._log_alpha
-            #print("log alpha: ", torch.mean(log_alpha))
-            kl_divergence = kl(log_alpha)
+            log_alpha_1 = model._bayesian1._log_alpha
+            log_alpha_2 = model._bayesian._log_alpha
+            kl1 = kl(log_alpha_1)
+            kl2 = kl(log_alpha_2)
+            print("kl1: ", kl1)
+            print("kl2: ", kl2)
+            kl_divergence = kl1 + kl2
+            print(kl_divergence)
             #kl_divergence = model.kl()
             print("KL Divergence, ", kl_divergence)
             loss = criterion(output, labels)
-            print("Loss: ", loss)
+            #print("Loss: ", loss)
 
             loss += kl_divergence #/ 5
-            print("losss: ", loss)
+            print("loss: ", loss)
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
 
             if  (i+1) % 42 == 0:
+                print("log alpha: ", log_alpha_1)
                 print('%d iterations' % (i+1))
                 avg = np.mean(train_loss[-50:])
                 avg_train_loss.append(avg)

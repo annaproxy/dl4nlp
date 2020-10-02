@@ -12,7 +12,7 @@ class KL(nn.Module):
 
     def forward(self, log_alpha):
         alpha = torch.exp(log_alpha)
-        divergence = -(0.5*log_alpha + self.c1*alpha + self.c2*alpha**2 + self.c3*alpha**3) / self.divisor
+        divergence = (0.5*log_alpha + self.c1*alpha + self.c2*alpha**2 + self.c3*alpha**3) / self.divisor
         return divergence.mean()
 
 class BayesianDropout(nn.Module):
@@ -23,19 +23,21 @@ class BayesianDropout(nn.Module):
     """
     def __init__(self, dropout_rate, weight_dim, cuda=True):
         super().__init__()
-        self.weight_dim = weight_dim
-        alpha = dropout_rate / (1 - dropout_rate)
-        self.alpha = alpha
-        self.cuda = cuda
-        self._log_alpha = nn.Parameter(torch.log(torch.ones(weight_dim)*alpha), requires_grad=True)
+        self.alpha = dropout_rate / (1 - dropout_rate)
+        self._log_alpha = nn.Parameter(torch.log(torch.ones(weight_dim)*self.alpha), requires_grad=True)
+
+        # init log_alpha params
+        sd = 1. / torch.sqrt(torch.tensor(weight_dim).float())
+        self._log_alpha.data.uniform_(-sd, sd)
 
     def forward(self, x, eval=False):
-        # Unit Gaussian prior
+        # Gaussian prior
         if eval: return x
-        noise = torch.randn(x.shape).to(torch.device('cuda' if self.cuda else "cpu"))
+        noise = torch.randn(x.shape).to(torch.device('cuda' if self.cuda else "cpu")) + 1
 
         # max=1.0 corresponds with a dropout rate of 0.5 (section 3.3)
-        self._log_alpha.data = torch.clamp(self._log_alpha.data, max=1.0)
+        #self._log_alpha.data = torch.clamp(self._log_alpha.data, max=1.0)
+        self._log_alpha.data = self._log_alpha.data.masked_fill(self._log_alpha.data > 1.0, 0)
         noise *= torch.exp(self._log_alpha)
         return x * noise
 
@@ -72,18 +74,13 @@ class Model(nn.Module):
                              bidirectional=bidirectional,
                              batch_first=True, dropout=0.4)
 
+        self._bayesian1 = BayesianDropout(0.5, 512)
         self._linear1 = nn.Linear(self._linear_dim, 256)
         #self._bayesian = dropout(0.5, 300, "variational")
         self._bayesian = BayesianDropout(0.5, 256)
         self._relu = nn.ReLU()
 
         self._linear = nn.Linear(256, lang_amount)
-
-    def kl(self):
-        kl = 0
-
-        kl = self._bayesian.kl().sum()
-        return kl
 
     def forward(self, inputs, eval=False):
 
@@ -92,6 +89,7 @@ class Model(nn.Module):
         # use the individual characters for additional classification?
         _, (h_n, _) = self._lstm(inputs)
         h_n = h_n.permute(1,0,2).contiguous().view(h_n.shape[1], self._linear_dim)
+        h_n = self._bayesian1(h_n)
         h_n = self._linear1(h_n)
         bayesian_dropout = self._bayesian(h_n, eval)
         bayesian_dropout = self._relu(bayesian_dropout)

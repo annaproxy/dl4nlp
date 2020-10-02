@@ -9,6 +9,45 @@ import math
 import torch.nn as nn
 from torch.nn.parameter import Parameter
 
+class KL(nn.Module):
+    def __init__(self, divisor=2):
+        super().__init__()
+        self.c1 = 1.16145124
+        self.c2 = -1.50204118
+        self.c3 = 0.58629921
+        self.divisor = divisor
+
+    def forward(self, log_alpha):
+        alpha = torch.exp(log_alpha)
+        divergence = -(0.5*log_alpha + self.c1*alpha + self.c2*alpha**2 + self.c3*alpha**3) / self.divisor
+        return divergence.mean()
+
+class BayesianDropout(nn.Module):
+    """
+    We follow Max and Kingma paper "Variational Dropout and the Local Reparameterization Trick" (2015)
+    Here alpha should be p / (1-p), as shown in the paper.
+
+    """
+    def __init__(self, dropout_rate, weight_dim, cuda=True):
+        super().__init__()
+        self.alpha = dropout_rate / (1 - dropout_rate)
+        self._log_alpha = nn.Parameter(torch.log(torch.ones(weight_dim)*self.alpha), requires_grad=True)
+
+        # init log_alpha params
+        sd = 1. / torch.sqrt(torch.tensor(weight_dim).float())
+        self._log_alpha.data.uniform_(0, sd)
+
+    def forward(self, x, eval=False):
+        # Gaussian prior
+        if eval: return x
+        noise = torch.randn(x.shape).to(torch.device('cuda' if self.cuda else "cpu")) + 1
+
+        # max=1.0 corresponds with a dropout rate of 0.5 (section 3.3)
+        #self._log_alpha.data = torch.clamp(self._log_alpha.data, max=1.0)
+        self._log_alpha.data = self._log_alpha.data.masked_fill(self._log_alpha.data > 1.0, 0)
+        noise *= torch.exp(self._log_alpha)
+        return x * noise
+
 def gelu(x):
     return 0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
 
@@ -116,11 +155,19 @@ class Block(nn.Module):
         self.ln_2 = LayerNorm(nx, eps=config.layer_norm_epsilon)
         self.mlp = MLP(4 * nx, config)
 
-    def forward(self, x, layer_past=None):
+        self._bayesian = BayesianDropout(0.5, config.n_embd)
+        self.act = gelu
+
+    def forward(self, x, layer_past=None, eval=False):
         a = self.attn(self.ln_1(x), layer_past=layer_past)
         x = x + a
         m = self.mlp(self.ln_2(x))
         x = x + m
+        x = self._bayesian(x, eval=eval)
+        x = self.act(x)
+        #print("x inside mlp in block: ", x.shape)
+
+
         return x#, present
 
 class GPT2Model(nn.Module):
@@ -133,10 +180,12 @@ class GPT2Model(nn.Module):
         self.wte = nn.Embedding(config.vocab_size, config.n_embd)
         self.wpe = nn.Embedding(config.n_positions, config.n_embd)
         block = Block(config.n_ctx, config, scale=True)
-        self.h = nn.ModuleList([copy.deepcopy(block) for _ in range(config.n_layer)])
+        modules = [copy.deepcopy(block) for _ in range(config.n_layer)]
+        self.h = nn.ModuleList(modules)
+        self.bayesian_layers = [module._bayesian for module in modules]
         self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
 
-    def forward(self, input_ids, position_ids=None, token_type_ids=None, past=None):
+    def forward(self, input_ids, position_ids=None, token_type_ids=None, past=None, eval=False):
         if past is None:
             past_length = 0
             past = [None] * len(self.h)
@@ -160,7 +209,7 @@ class GPT2Model(nn.Module):
             token_type_embeds = 0
         hidden_states = inputs_embeds + position_embeds + token_type_embeds
         for block, layer_past in zip(self.h, past):
-            hidden_states = block(hidden_states, layer_past)
+            hidden_states = block(hidden_states, layer_past, eval=eval)
         hidden_states = self.ln_f(hidden_states)
         output_shape = input_shape + (hidden_states.size(-1),)
         return hidden_states.view(*output_shape)#, presents
@@ -188,8 +237,8 @@ class GPT2LMHeadModel(nn.Module):
         self.transformer = GPT2Model(config)
         self.lm_head = GPT2LMHead(self.transformer.wte.weight, config)
 
-    def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
-        hidden_states = self.transformer(input_ids, position_ids, token_type_ids, past)
+    def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None, eval=False):
+        hidden_states = self.transformer(input_ids, position_ids, token_type_ids, past, eval=eval)
         lm_logits = self.lm_head(hidden_states)
         lm_logits = torch.mean(lm_logits, dim=1)
 

@@ -10,8 +10,8 @@ class GPT2Config(object):
             n_positions=28,
             n_ctx=28,
             n_embd=256,
-            n_layer=8,
-            n_head=8,
+            n_layer=2,
+            n_head=2,
             layer_norm_epsilon=1e-5,
             initializer_range=0.02,
     ):

@@ -11,7 +11,7 @@ import torch
 import random
 import argparse
 import numpy as np
-from GPT2.model import (GPT2LMHeadModel)
+from GPT2.model import GPT2LMHeadModel, KL
 from GPT2.config import GPT2Config
 from utils.utils import *
 from utils.config import config
@@ -19,10 +19,21 @@ from utils.config import config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def KLD(model, kl):
+    bayesian_modules = model.transformer.bayesian_layers
+    log_alphas = [module._log_alpha for module in bayesian_modules]
+    #print(log_alphas)
+    KLs = torch.tensor([kl(log_alpha) for log_alpha in log_alphas])
+    #print(KLs)
+    KLs = KLs.sum()
+    return KLs
+
 def train(model, training_loader, validation_loader, validation_data, config):
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
+    kl = KL(divisor=1)
+
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.98)
     avg_train_loss = []
     train_loss = []
@@ -35,21 +46,23 @@ def train(model, training_loader, validation_loader, validation_data, config):
             optimizer.zero_grad()
 
             output = model(inputs)
+            KL_loss = KLD(model, kl)
+            #print("KLD: ", KL_loss)
 
-            loss = criterion(output, labels)
+            loss = criterion(output, labels) + KL_loss
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
 
-            if  (i+1) % 11 == 0:
+            if  (i+1) % 51 == 0:
                 print('%d iterations' % (i+1))
                 avg = np.mean(train_loss[-50:])
                 avg_train_loss.append(avg)
                 print('Loss: %.3f' % avg)
                 print()
-                #accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
-                #print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
-                #model.train()
+                accuracy = validate_paragraphs(model, validation_data, validation_loader, save_classification_report=False)
+                print("Current Accuracy: {}, After {} iterations in Epoch {}".format(accuracy, i, epoch))
+                model.train()
                 #torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+"_"+str(accuracy)+".pt")
                 #torch.save(model.state_dict(), "./models/gpt/"+str(epoch)+".pt")
 

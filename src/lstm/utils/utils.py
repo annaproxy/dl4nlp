@@ -46,32 +46,25 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
     n_batches = len(validation_loader)
     if subset: n_batches = 1000
 
-    #with open(textfile) as f:
-    #    pars = f.readlines()
-
     validation_data.predict_paragraph(True)
     model.eval()
-    model = model #.cpu()
     y_pred = []; y_true = [];
     accuracies = []
-
     wrong_english_indices = []
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(validation_loader):
             inputs = inputs.to(device).squeeze(0) #.cpu()
             labels = labels.to(device).squeeze(0) #.cpu()
-            #if not validation_data.lang_to_idx["eng"] == labels[0].item():
-        #        continue
 
-            #for n in range(30):
             logits = model(inputs, False)
+            #log_alpha = model._bayesian._log_alpha
+            #print(log_alpha)
+            #raise ValueError()
             probs = get_mean_softmax(logits)
             #output = torch.argmax(logits,dim=1).view(-1)
             prediction = torch.argmax(probs)
             #prediction = get_paragraph_prediction(output, labels)
-            #print(prediction)
-            #    print(validation_data.idx_to_lang[prediction.item()])
-            #raise ValueError()
+
             y_pred.append(prediction.item())
             y_true.append(labels[0].item())
 
@@ -82,29 +75,6 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
             #        #print(i, validation_data.idx_to_lang[lang_true], pars[i])
             #        wrong_english_indices.append(i)
             correct = (prediction == labels[0].item()).float()
-            """
-            entropy, probs = get_entropy(logits)
-            probs = probs.cpu().numpy()
-
-            if correct:
-                print("Correct classification Entropy: {}".format(entropy))
-            if not correct:
-                print("entropy of incorrect classification: {}".format(entropy))
-                print("Language {} mistaken for {}.".format(validation_data.idx_to_lang[labels[0].item()], validation_data.idx_to_lang[prediction.item()]))
-                #fig = plt.figure()
-                #ax = fig.add_axes([0,0,1,1])
-                langs = np.array([validation_data.idx_to_lang[i] for i in range(235)])
-                #sns.set_theme(style="whitegrid")
-                #ax = sns.barplot( data=[probs.cpu().numpy())
-                #plt.show()
-                #print(langs)
-                pd_map = {l:[probs[i]] for i, l in enumerate(langs)}
-                pd.DataFrame(probs, index=langs).plot.bar()
-                plt.show()
-
-                #ax.bar(langs,probs.cpu().numpy()[:10])
-                #plt.show()
-            """
             accuracies.append(correct.item())
             if i == n_batches: break
     #print(len(wrong_english_indices))
@@ -126,7 +96,7 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
 
 
 def validate_uncertainty(model, validation_data, validation_loader):
-
+    n_batches = len(validation_loader)
     validation_data.predict_paragraph(True)
     #model.eval()
     model = model #.cpu()
@@ -134,6 +104,9 @@ def validate_uncertainty(model, validation_data, validation_loader):
     accuracies = []
 
     wrong_english_indices = []
+    with open("Bayesian_Results_LSTM.csv", "w") as file:
+        file.write("Data_index, prediction, label, means, std\n")
+
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(validation_loader):
             inputs = inputs.to(device).squeeze(0) #.cpu()
@@ -141,27 +114,28 @@ def validate_uncertainty(model, validation_data, validation_loader):
             #if not validation_data.lang_to_idx["eng"] == labels[0].item():
         #        continue
 
-            datapoint_probs = torch.zeros(inputs.shape[0],235)
+            datapoint_probs = torch.zeros(50,235)
             for n in range(50):
-                logits = model(inputs, True)
+                logits = model(inputs, False)
                 probabilities = get_mean_softmax(logits)
-                print(probabilities.shape)
                 datapoint_probs[n,:] = probabilities
-                raise ValueError()
 
-            #predictions = torch.argmax(datapoint_probs, dim=1)
             standard_deviations = torch.std(datapoint_probs, dim=0)
             means = torch.mean(datapoint_probs, dim=0)
+            prediction = torch.argmax(means).item()
             sorted_predictions = torch.argsort(means)
             top_10 = sorted_predictions[-10:]
+            print("means: ",means[top_10])
+            print("std: ",standard_deviations[top_10])
+            print()
+            #raise ValueError()
+            label = labels[0].item()
 
-
-            output = torch.argmax(logits,dim=1).view(-1)
-            prediction = get_paragraph_prediction(output, labels)
+            #output = torch.argmax(logits,dim=1).view(-1)
             #    print(validation_data.idx_to_lang[prediction.item()])
             #raise ValueError()
-            y_pred.append(prediction.item())
-            y_true.append(labels[0].item())
+            y_pred.append(prediction)
+            y_true.append(label)
 
             #lang_pred = prediction.item()
             #lang_true = labels[0].item()
@@ -169,32 +143,18 @@ def validate_uncertainty(model, validation_data, validation_loader):
             #    if lang_pred != lang_true:
             #        #print(i, validation_data.idx_to_lang[lang_true], pars[i])
             #        wrong_english_indices.append(i)
-            correct = (prediction == labels[0].item()).float()
-            entropy, probs = get_entropy(logits)
-            probs = probs.cpu().numpy()
+            correct = (prediction == labels)#.float()
 
-            if correct:
-                print("Correct classification Entropy: {}".format(entropy))
-            if not correct:
-                print("entropy of incorrect classification: {}".format(entropy))
-                print("Language {} mistaken for {}.".format(validation_data.idx_to_lang[labels[0].item()], validation_data.idx_to_lang[prediction.item()]))
-                #fig = plt.figure()
-                #ax = fig.add_axes([0,0,1,1])
-                langs = np.array([validation_data.idx_to_lang[i] for i in range(235)])
-                #sns.set_theme(style="whitegrid")
-                #ax = sns.barplot( data=[probs.cpu().numpy())
-                #plt.show()
-                #print(langs)
-                pd_map = {l:[probs[i]] for i, l in enumerate(langs)}
-                pd.DataFrame(probs, index=langs).plot.bar()
-                plt.show()
-
-                #ax.bar(langs,probs.cpu().numpy()[:10])
-                #plt.show()
+            means = [round(mean, 6) for mean in means.cpu().numpy()]
+            std = [round(std_i, 6) for std_i in standard_deviations.cpu().numpy()]
+            with open("Bayesian_Results_LSTM.csv", "a") as file:
+                file.write(str(i)+", "+validation_data.idx_to_lang[prediction]+", " + \
+                            validation_data.idx_to_lang[label]+", "+str(means)+", " + \
+                            str(std)+"\n")
 
 
 
-            accuracies.append(correct.item())
+            accuracies.append(correct)
     #print(len(wrong_english_indices))
 
     #with open("indices_fucked_test.txt", "w") as f:
