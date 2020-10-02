@@ -41,7 +41,7 @@ class BayesianDropout(nn.Module):
 
 
 class Embedder(nn.Module):
-    def __init__(self, input_dim, embedding_dim, train_embedding=True, load_embeddings=True):
+    def __init__(self, input_dim, embedding_dim, train_embedding=True, load_embeddings=False):
         super().__init__()
 
         self._embedding = nn.Embedding(input_dim, embedding_dim)

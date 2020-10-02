@@ -35,12 +35,12 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
             #print("log alpha: ", torch.mean(log_alpha))
             kl_divergence = kl(log_alpha)
             #kl_divergence = model.kl()
-            print("KL Divergence, ", kl_divergence)
+            #print("KL Divergence, ", kl_divergence)
             loss = criterion(output, labels)
-            print("Loss: ", loss)
+            #print("Loss: ", loss)
 
             loss += kl_divergence #/ 5
-            print("losss: ", loss)
+            #print("losss: ", loss)
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
