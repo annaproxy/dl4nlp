@@ -5,7 +5,6 @@ import torch
 import numpy  as np
 from torch.utils.data import Dataset
 import torch.utils.data as data
-from torchvision import datasets
 import json
 
 class WiliDataLoader(Dataset):
