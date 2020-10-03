@@ -19,10 +19,10 @@ def predict(model, validation_loader, validation_data, config):
     model.eval()
 
     if config.prediction_type=="deterministic":
-        accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False)
+        accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False, config=config)
         print("Validation Accuracy: {}".format(accuracy))
     else:
-        accuracy = validate_uncertainty(model, validation_data, validation_loader)
+        accuracy = validate_uncertainty(model, validation_data, validation_loader, config=config)
         print("Validation Accuracy: {}".format(accuracy))
 
     #write_results((avg_train_loss, val_loss, val_accuracy), model_type+"_")
