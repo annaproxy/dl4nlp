@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import sys
 
@@ -46,7 +47,7 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
             #print("Loss: ", loss)
 
             loss += kl_divergence #/ 5
-            print("loss: ", loss)
+            #print("loss: ", loss)
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import torch
 import pandas as pd
@@ -41,7 +42,7 @@ def get_entropy(outputs):
     return entropy, probabilities
 
 
-def validate_paragraphs(model, validation_data, validation_loader, textfile = 'data/wili-2018/x_val_sub.txt',
+def validate_paragraphs(model, validation_data, validation_loader, textfile = 'data/twitter/x_twituser.txt' ,#_val_sub.txt',
     save_classification_report=True, subset=True):
     n_batches = len(validation_loader)
     if subset: n_batches = 1000
@@ -53,9 +54,11 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
     wrong_english_indices = []
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(validation_loader):
-            inputs = inputs.to(device).squeeze(0) #.cpu()
-            labels = labels.to(device).squeeze(0) #.cpu()
+            #print(inputs.shape, labels.shape)
+            if inputs.shape[1] < 1: continue
 
+            inputs = inputs.to(device).squeeze(0).long() #.cpu()
+            labels = labels.to(device).squeeze(0) #.cpu()
             logits = model(inputs, False)
             #log_alpha = model._bayesian._log_alpha
             #print(log_alpha)
@@ -67,6 +70,7 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
 
             y_pred.append(prediction.item())
             y_true.append(labels[0].item())
+            
 
             #lang_pred = prediction.item()
             #lang_true = labels[0].item()
@@ -87,11 +91,14 @@ def validate_paragraphs(model, validation_data, validation_loader, textfile = 'd
     accuracy = round(np.sum(accuracies)/(n_batches),4)
 
     print(accuracy)
-
+    def rowIndex(row):return row.name
     if save_classification_report:
-        target_names = validation_data.languages
-        df = pd.DataFrame(classification_report(y_true, y_pred, target_names=target_names, output_dict=True)).transpose()
-        df.to_csv('classification_report_kl_lstm.csv', index= True)
+        #target_names = validation_data.idx_to_lang
+        df = pd.DataFrame(classification_report(y_true, y_pred,  output_dict=True)).transpose()
+        df['lan_index'] = df.apply(rowIndex, axis=1) # for z in df.index]
+        df['lan'] = df['lan_index'].map(lambda z:validation_data.idx_to_lang[int(z)] if len(z) < 4 else '')
+        df.to_csv('classification_report_DROPOUT_BOY_CLEANED.csv', index= True)
+        #print(df)
     return accuracy
 
 

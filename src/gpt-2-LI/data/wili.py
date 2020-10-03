@@ -5,7 +5,6 @@ import torch
 import numpy  as np
 from torch.utils.data import Dataset
 import torch.utils.data as data
-from torchvision import datasets
 import json
 
 class WiliDataLoader(Dataset):
@@ -23,7 +22,7 @@ class WiliDataLoader(Dataset):
         self.lang_to_idx = { l:i for i,l in enumerate(self.languages) }
         self.idx_to_lang = { i:l for i,l in enumerate(self.languages) }
 
-        self.vocab_dict = json.load(open('./data/vocabs/full_vocab.json'))
+        self.vocab_dict = json.load(open('./data/vocabs/full_vocab.json', encoding='utf-8'))
         self.vocab_list = [key for key in self.vocab_dict]
         self.vocab_size = len(self.vocab_list)
 
@@ -43,11 +42,11 @@ class WiliDataLoader(Dataset):
 
         """
 
-        with open(self.data_path, 'r') as f:
+        with open(self.data_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         lines = [list(paragraph)[:-1] for paragraph in lines]
 
-        with open(self.label_path, 'r') as f:
+        with open(self.label_path, 'r', encoding='utf-8') as f:
             languages = f.readlines()
         languages = [language[:-1] for language in languages]
 
@@ -106,7 +105,7 @@ class WiliBytesDataLoader(Dataset):
         self.lang_to_idx = { l:i for i,l in enumerate(self.languages) }
         self.idx_to_lang = { i:l for i,l in enumerate(self.languages) }
 
-        self.vocab_dict = json.load(open('./data/vocabs/full_bytes_vocab.json'))
+        self.vocab_dict = json.load(open('./data/vocabs/full_bytes_vocab.json', encoding='utf-8'))
         self.vocab_list = [key for key in self.vocab_dict]
         self.vocab_size = len(self.vocab_list)
 
@@ -120,11 +119,11 @@ class WiliBytesDataLoader(Dataset):
         """
         Each line is a list of integers that represent subwords
         """
-        with open(self.data_path, 'r') as f:
+        with open(self.data_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         lines = [[int(ch) for ch in paragraph.split()] for paragraph in lines]
 
-        with open(self.label_path, 'r') as f:
+        with open(self.label_path, 'r', encoding='utf-8') as f:
             languages = f.readlines()
         languages = [language[:-1] for language in languages]
         #languages = ['eng' if lan == 'eng' else 'noneng' for lan in languages]
