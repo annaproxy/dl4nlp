@@ -27,7 +27,7 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
     for epoch in range(config.epochs):
         print("Starting Epoch: {}".format(epoch))
         for i, (inputs, labels) in enumerate(training_loader):
-            inputs = inputs.to(device);
+            inputs = inputs.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
 
@@ -36,13 +36,8 @@ def train(model, training_loader, validation_loader, validation_data, config, mo
             log_alpha_2 = model._bayesian._log_alpha
             #kl1 = kl(log_alpha_1)
             kl2 = kl(log_alpha_2)
-            #print("kl1: ", kl1)
-            print("kl2: ", kl2)
-            #kl_divergence = kl1 + kl2
             kl_divergence = kl2
-            #print(kl_divergence)
-            #kl_divergence = model.kl()
-            #print("KL Divergence, ", kl_divergence)
+
             loss = criterion(output, labels)
             #print("Loss: ", loss)
 

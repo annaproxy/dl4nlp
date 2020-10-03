@@ -23,7 +23,7 @@ def get_mean_softmax(outputs):
     probabilities = torch.mean(probabilities, dim=0)
     return probabilities
 
-def validate_paragraphs(model, validation_data, validation_loader, save_classification_report=True, subset=True):
+def validate_paragraphs(model, validation_data, validation_loader, save_classification_report=True, subset=True, config=None):
     n_batches = len(validation_loader)
     if subset: n_batches = 500
     validation_data.predict_paragraph(True)
@@ -52,11 +52,11 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
     if save_classification_report:
         target_names = validation_data.languages
         df = pd.DataFrame(classification_report(y_true, y_pred, target_names=target_names, output_dict=True)).transpose()
-        df.to_csv('classification_report_bpe_bayes.csv', index= True)
+        df.to_csv('classification_report_deterministic_{}_{}.csv'.format(config.batch_size, config.input), index= True)
     return accuracy
 
 
-def validate_uncertainty(model, validation_data, validation_loader):
+def validate_uncertainty(model, validation_data, validation_loader, config=None):
     n_batches = len(validation_loader)
     validation_data.predict_paragraph(True)
     #model.eval()
@@ -64,7 +64,6 @@ def validate_uncertainty(model, validation_data, validation_loader):
     y_pred = []; y_true = [];
     accuracies = []
 
-    wrong_english_indices = []
     with open("Bayesian_Results_gpt.csv", "w") as file:
         file.write("Data_index; predictio; label; means; std\n")
 
@@ -103,6 +102,6 @@ def validate_uncertainty(model, validation_data, validation_loader):
     accuracy = round(np.sum(accuracies)/(n_batches),4)
     target_names = validation_data.languages
     df = pd.DataFrame(classification_report(y_true, y_pred, target_names=target_names, output_dict=True)).transpose()
-    df.to_csv('classification_report_uncertainty.csv', index= True)
+    df.to_csv('classification_report_stochastic_{}_{}.csv'.format(config.batch_size, config.input), index= True)
     print(accuracy)
     return accuracy

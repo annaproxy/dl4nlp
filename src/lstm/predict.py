@@ -18,13 +18,12 @@ def predict(model, validation_loader, validation_data, config, filename):
     model.eval()
 
     if config.prediction_type=="deterministic":
-        accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False, textfile=filename)
+        accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False, config=config)
         print("Validation Accuracy: {}".format(accuracy))
     else:
-        accuracy = validate_uncertainty(model, validation_data, validation_loader)
+        accuracy = validate_uncertainty(model, validation_data, validation_loader, config=config)
         print("Validation Accuracy: {}".format(accuracy))
 
-    #write_results((avg_train_loss, val_loss, val_accuracy), model_type+"_")
     print("Iterators Done")
 
 def main():
