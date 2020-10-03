@@ -17,7 +17,7 @@ def predict(model, validation_loader, validation_data, config, filename):
     model.eval()
 
     if config.prediction_type=="deterministic":
-        accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False, textfile=filename)
+        accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False)
         print("Validation Accuracy: {}".format(accuracy))
     else:
         accuracy = validate_uncertainty(model, validation_data, validation_loader)

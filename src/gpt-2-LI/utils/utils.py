@@ -23,7 +23,7 @@ def get_mean_softmax(outputs):
     probabilities = torch.mean(probabilities, dim=0)
     return probabilities
 
-def validate_paragraphs(model, validation_data, validation_loader, save_classification_report=True, subset=True):
+def validate_paragraphs(model, validation_data, validation_loader, save_classification_report=True, subset=True, config=None):
     n_batches = len(validation_loader)
     if subset: n_batches = 500
     validation_data.predict_paragraph(True)
@@ -56,7 +56,7 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
     return accuracy
 
 
-def validate_uncertainty(model, validation_data, validation_loader):
+def validate_uncertainty(model, validation_data, validation_loader, config=None):
     n_batches = len(validation_loader)
     validation_data.predict_paragraph(True)
     #model.eval()
