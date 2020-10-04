@@ -9,7 +9,7 @@ import torch.utils.data as data
 import json
 
 class WiliDataLoader(Dataset):
-    def __init__(self, data_path, label_path, sequence_length=32, predict=False, predict_offset=10):
+    def __init__(self, data_path, label_path, sequence_length=32, predict=False, predict_offset=15):
 
         self.data_path = data_path
         self.label_path = label_path
@@ -90,7 +90,7 @@ class WiliDataLoader(Dataset):
 
 
 class WiliBytesDataLoader(Dataset):
-    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=20):
+    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=10):
 
         self.data_path = data_path
         self.label_path = label_path
