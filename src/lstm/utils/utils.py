@@ -93,7 +93,7 @@ def validate_uncertainty(model, validation_data, validation_loader, config=None,
     y_pred = []; y_true = [];
     accuracies = []
 
-    with open("Bayesian_Results_LSTM.csv", "w") as file:
+    with open("Bayesian_Results_LSTM_FINAL.csv", "w") as file:
         file.write("Data_index; prediction; label; means; std\n")
 
     with torch.no_grad():
@@ -119,7 +119,7 @@ def validate_uncertainty(model, validation_data, validation_loader, config=None,
 
             means = [round(mean, 6) for mean in means.cpu().numpy()]
             std = [round(std_i, 6) for std_i in standard_deviations.cpu().numpy()]
-            with open("Bayesian_Results_LSTM_{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
+            with open("Bayesian_Results_LSTM_FINAL.csv", "a") as file: #{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
                 file.write(str(i)+"; "+validation_data.idx_to_lang[prediction]+"; " + \
                             validation_data.idx_to_lang[label]+"; "+str(means)+"; " + \
                             str(std)+"\n")
@@ -136,7 +136,7 @@ def validate_uncertainty(model, validation_data, validation_loader, config=None,
 
     print(accuracy)
     def rowIndex(row):return row.name
-    if save_classification_report:
+    if True or save_classification_report:
         #target_names = validation_data.idx_to_lang
         df = pd.DataFrame(classification_report(y_true, y_pred,  output_dict=True)).transpose()
         df['lan_index'] = df.apply(rowIndex, axis=1) # for z in df.index]

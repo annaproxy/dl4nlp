@@ -64,7 +64,7 @@ def validate_uncertainty(model, validation_data, validation_loader, config=None)
     y_pred = []; y_true = [];
     accuracies = []
 
-    with open("Bayesian_Results_gpt.csv", "w") as file:
+    with open("Bayesian_Results_gpt_FINAL.csv", "w") as file:
         file.write("Data_index; predictio; label; means; std\n")
 
     with torch.no_grad():
@@ -91,7 +91,7 @@ def validate_uncertainty(model, validation_data, validation_loader, config=None)
 
             means = [round(mean, 6) for mean in means.cpu().numpy()]
             std = [round(std_i, 6) for std_i in standard_deviations.cpu().numpy()]
-            with open("Bayesian_Results_gpt.csv", "a") as file:
+            with open("Bayesian_Results_gpt_FINAL.csv", "a") as file:
                 file.write(str(i)+"; "+validation_data.idx_to_lang[prediction]+"; " + \
                             validation_data.idx_to_lang[label]+"; "+str(means)+"; " + \
                             str(std)+"\n")

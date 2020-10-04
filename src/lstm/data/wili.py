@@ -90,7 +90,7 @@ class WiliDataLoader(Dataset):
 
 
 class WiliBytesDataLoader(Dataset):
-    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=1):
+    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=20):
 
         self.data_path = data_path
         self.label_path = label_path
