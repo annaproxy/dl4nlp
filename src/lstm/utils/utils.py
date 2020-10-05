@@ -45,6 +45,8 @@ def get_entropy(outputs):
 def validate_paragraphs(model, validation_data, validation_loader, save_classification_report=True, subset=True, config=None):
     n_batches = len(validation_loader)
     if subset: n_batches = 1000
+    with open("Twitter_Det_Results_LSTM_FINAL_Chars.csv", "w") as file:
+        file.write("Data_index; prediction; label;\n")
 
     validation_data.predict_paragraph(True)
     model.eval()
@@ -67,6 +69,10 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
             y_pred.append(prediction.item())
             y_true.append(labels[0].item())
 
+            with open("Twitter_Det_Results_LSTM_FINAL_Chars.csv", "a") as file: #{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
+                file.write(str(i)+"; "+validation_data.idx_to_lang[prediction.item()]+"; " + \
+                            validation_data.idx_to_lang[labels[0].item()] + "\n")
+
             correct = (prediction == labels[0].item()).float()
             accuracies.append(correct.item())
             if i == n_batches: break
@@ -80,7 +86,7 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
         df = pd.DataFrame(classification_report(y_true, y_pred,  output_dict=True)).transpose()
         df['lan_index'] = df.apply(rowIndex, axis=1) # for z in df.index]
         df['lan'] = df['lan_index'].map(lambda z:validation_data.idx_to_lang[int(z)] if len(z) < 4 else '')
-        df.to_csv('classification_report_LSTM_deterministic_{}_{}_{}.csv'.format(config.batch_size, config.input, config.sequence_length), index= True)
+        df.to_csv('Twitter_classification_report_LSTM_deterministic_{}_{}_{}.csv'.format(config.batch_size, config.input, config.sequence_length), index= True)
         #print(df)
     return accuracy
 
@@ -93,16 +99,19 @@ def validate_uncertainty(model, validation_data, validation_loader, config=None,
     y_pred = []; y_true = [];
     accuracies = []
 
-    with open("Bayesian_Results_LSTM_FINAL.csv", "w") as file:
+    with open("Twitter_Bayesian_Results_LSTM_FINAL_Chars.csv", "w") as file:
         file.write("Data_index; prediction; label; means; std\n")
 
+    correct_indices = []
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(validation_loader):
-            inputs = inputs.to(device).squeeze(0) #.cpu()
-            labels = labels.to(device).squeeze(0) #.cpu()
+            if inputs.shape[1] < 1: continue
+            correct_indices.append(i)
+            inputs = inputs.to(device).squeeze(0).long() #.cpu()
+            labels = labels.to(device).squeeze(0).long() #.cpu()
 
-            datapoint_probs = torch.zeros(50,235)
-            for n in range(50):
+            datapoint_probs = torch.zeros(25,235)
+            for n in range(25):
                 logits = model(inputs, False)
                 probabilities = get_mean_softmax(logits)
                 datapoint_probs[n,:] = probabilities
@@ -119,12 +128,13 @@ def validate_uncertainty(model, validation_data, validation_loader, config=None,
 
             means = [round(mean, 6) for mean in means.cpu().numpy()]
             std = [round(std_i, 6) for std_i in standard_deviations.cpu().numpy()]
-            with open("Bayesian_Results_LSTM_FINAL.csv", "a") as file: #{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
+            with open("Twitter_Bayesian_Results_LSTM_FINAL_Chars.csv", "a") as file: #{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
                 file.write(str(i)+"; "+validation_data.idx_to_lang[prediction]+"; " + \
                             validation_data.idx_to_lang[label]+"; "+str(means)+"; " + \
                             str(std)+"\n")
 
             accuracies.append(correct)
+    print(correct_indices)
     #print(len(wrong_english_indices))
 
     #with open("indices_fucked_test.txt", "w") as f:
@@ -141,5 +151,5 @@ def validate_uncertainty(model, validation_data, validation_loader, config=None,
         df = pd.DataFrame(classification_report(y_true, y_pred,  output_dict=True)).transpose()
         df['lan_index'] = df.apply(rowIndex, axis=1) # for z in df.index]
         df['lan'] = df['lan_index'].map(lambda z:validation_data.idx_to_lang[int(z)] if len(z) < 4 else '')
-        df.to_csv('classification_report_LSTM_stochastic_{}_{}_{}.csv'.format(config.batch_size, config.input, config.sequence_length), index= True)
+        df.to_csv('Twitter_classification_report_LSTM_stochastic_{}_{}_{}.csv'.format(config.batch_size, config.input, config.sequence_length), index= True)
     return accuracy

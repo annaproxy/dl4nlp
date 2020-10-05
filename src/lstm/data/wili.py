@@ -7,9 +7,17 @@ import numpy  as np
 from torch.utils.data import Dataset
 import torch.utils.data as data
 import json
+from collections import defaultdict 
+lang_dict = {}
+
+with open('data/wili-2018/labels.csv', 'r') as f: 
+    for line in f.readlines():
+        s = line.split(';')
+        code = s[0]
+        lang_dict[code] = s[1]
 
 class WiliDataLoader(Dataset):
-    def __init__(self, data_path, label_path, sequence_length=32, predict=False, predict_offset=15):
+    def __init__(self, data_path, label_path, sequence_length=32, predict=False, predict_offset=5):
 
         self.data_path = data_path
         self.label_path = label_path
@@ -19,9 +27,14 @@ class WiliDataLoader(Dataset):
 
         self.languages = list(set(self.line_languages))
         self.languages.sort()
+        self.languages = sorted(list(set(self.line_languages)))
         print("Number of languages: ", len(self.languages))
-        self.lang_to_idx = { l:i for i,l in enumerate(self.languages) }
-        self.idx_to_lang = { i:l for i,l in enumerate(self.languages) }
+        self.real_languages = sorted(list(set(self.real_languages)))
+        print("Number of languages: ", len(self.languages))
+        #print([lang_dict[z] for z in self.languages])
+        self.lang_to_idx = { l:i for i,l in enumerate(self.real_languages) }
+        self.idx_to_lang = { i:l for i,l in enumerate(self.real_languages) }
+
 
         self.vocab_dict = json.load(open('./data/vocabs/full_vocab.json', encoding='utf-8'))
         self.vocab_list = [key for key in self.vocab_dict]
@@ -31,6 +44,8 @@ class WiliDataLoader(Dataset):
 
         self.char_to_idx = { ch:i for i,ch in enumerate(self.vocab_list) }
         self.idx_to_char = { i:ch for i,ch in enumerate(self.vocab_list) }
+
+        self.char_to_idx = defaultdict( lambda: self.char_to_idx['0'], self.char_to_idx)
 
         self.predict = predict
         self.prediction_offset = predict_offset
@@ -46,6 +61,10 @@ class WiliDataLoader(Dataset):
             lines = f.readlines()
         lines = [list(paragraph)[:-1] for paragraph in lines]
 
+
+        with open('data/wili-2018/y_test_clean.txt', 'r') as f:
+            real_languages = f.readlines()
+        self.real_languages = [language[:-1] for language in real_languages]
         with open(self.label_path, 'r', encoding='utf-8') as f:
             languages = f.readlines()
         languages = [language[:-1] for language in languages]
@@ -90,7 +109,7 @@ class WiliDataLoader(Dataset):
 
 
 class WiliBytesDataLoader(Dataset):
-    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=10):
+    def __init__(self, data_path, label_path, sequence_length=30, n_slices=8, predict=False, predict_offset=2):
 
         self.data_path = data_path
         self.label_path = label_path
@@ -131,9 +150,9 @@ class WiliBytesDataLoader(Dataset):
         with open(self.label_path, 'r', encoding='utf-8') as f:
             languages = f.readlines()
 
-        #with open('data/wili-2018/y_test.txt', 'r') as f:
-        #    real_languages = f.readlines()
-        real_languages = languages
+        with open('data/wili-2018/y_test_clean.txt', 'r') as f:
+            real_languages = f.readlines()
+        #real_languages = languages
         #with open('data/wili-2018/y_test.txt', 'r', encoding='utf-8') as f:
         #    real_languages = f.readlines()
 

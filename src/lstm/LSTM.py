@@ -85,7 +85,7 @@ class Model(nn.Module):
         self._linear = nn.Linear(hidden_layer_dim, lang_amount)
 
     def forward(self, inputs, eval=False):
-
+        #print(inputs.shape)
         inputs = self._embedding(inputs)
 
         # use the individual characters for additional classification?

@@ -29,6 +29,9 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
     validation_data.predict_paragraph(True)
     y_pred = []; y_true = [];
     accuracies = []
+
+    with open("Det_Results_gpt_FINAL.csv", "w") as file:
+        file.write("Data_index; predictio; label\n")
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(validation_loader):
             inputs = inputs.to(device).squeeze(0)
@@ -44,6 +47,9 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
             correct = (prediction == labels[0].item()).float()
             #print("prediction: ", prediction, "label: ", labels[0].item())
             #print(correct)
+            with open("Det_Results_gpt_FINAL.csv", "a") as file:
+                file.write(str(i)+"; "+validation_data.idx_to_lang[prediction.item()]+"; " + \
+                            validation_data.idx_to_lang[labels[0].item()]+"\n")
             accuracies.append(correct.item())
             #print(i)
             if i == n_batches: break
