@@ -35,13 +35,13 @@ for i, line in enumerate(lines): #[:100]:
         clean += word + " "
     clean = clean[:-1]
 
-    with open('x_twituser_cleaned.txt', 'a') as f:
-        f.write(clean)
+    with open('x_twituser_cleaned_lowercased.txt', 'a') as f:
+        f.write(clean.lower())
         if '\r' in clean or '\n' in clean: print(clean)
         f.write('\n')
-    with open('y_twituser.txt', 'a') as f:
-        lan = d['lang']
-        f.write(lang_dict[lan])
-        f.write('\n')
+    #with open('y_twituser.txt', 'a') as f:
+    #    lan = d['lang']
+    #    f.write(lang_dict[lan])
+    #    f.write('\n')
 
 

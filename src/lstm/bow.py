@@ -10,6 +10,7 @@ import itertools as it
 import numpy as np
 import random as rd
 import pandas as pd
+from collections import defaultdict 
 
 from tqdm import tqdm
 from sklearn.metrics import classification_report
@@ -56,16 +57,28 @@ class Data():
         languages.sort()
 
         self.languages = languages
-        self.lang_to_idx = {l:i for i, l in enumerate(languages)}
-        self.idx_to_lang = {i:l for i, l in enumerate(languages)}
+        with open('data/wili-2018/y_test_clean.txt', 'r') as f:
+            real_languages = f.readlines()
+        self.real_languages = [language[:-1] for language in real_languages]
+
+        self.real_languages = sorted(list(set(self.real_languages)))
+        self.lang_to_idx = { l:i for i,l in enumerate(self.real_languages) }
+        self.idx_to_lang = { i:l for i,l in enumerate(self.real_languages) }
+
+        self.char_to_idx = defaultdict( lambda: self.char_to_idx['0'], self.char_to_idx)
+
+
+        self.languages = self.real_languages
+        print(len(self.languages))
 
     def reset_next_batch(self):
         self.next_batch = 0
 
     @staticmethod
     def read_file(file_name):
-        if not os.path.isfile(file_name):
-            raise ValueError("Given input file cannot be found.")
+        #print(file_name)
+        ##if not os.path.isfile(file_name):
+        #   raise ValueError("Given input file cannot be found.")
 
         file = open(file_name, "r")
         if file_name.lower().endswith((".json")):
@@ -262,40 +275,42 @@ def test_uncertainty(data, model):
     y_true = []
     accuracies = []
     for i, datapoint in enumerate(tqdm(data.data)):
-        datapoint = data.bag_of_words([datapoint])
-        datapoint = torch.from_numpy(datapoint).float().to(device)
-        datapoint_probs = torch.zeros(50, len(data.languages))
-        for j in range(50):
-            logits = model(datapoint)
-            probabilities = f.softmax(logits, dim=1)
-            datapoint_probs[j, :] = probabilities
-        standard_deviations = torch.std(datapoint_probs, dim=0)
-        means = torch.mean(datapoint_probs, dim=0)
-        prediction = torch.argmax(means).item()
+        #if len(datapoint) > 4:
+            datapoint = data.bag_of_words([datapoint])
+            datapoint = torch.from_numpy(datapoint).float().to(device)
+            datapoint_probs = torch.zeros(50, len(data.languages))
+            for j in range(50):
+                logits = model(datapoint)
+                probabilities = f.softmax(logits, dim=1)
+                datapoint_probs[j, :] = probabilities
+            standard_deviations = torch.std(datapoint_probs, dim=0)
+            means = torch.mean(datapoint_probs, dim=0)
+            prediction = torch.argmax(means).item()
 
-        label = data.lang_to_idx[data.labels[i]]
+            label = data.lang_to_idx[data.labels[i]]
 
-        y_pred.append(prediction)
-        y_true.append(label)
+            y_pred.append(prediction)
+            y_true.append(label)
 
-        correct = (prediction == label)
-        accuracies.append(correct)
+            correct = (prediction == label)
+            accuracies.append(correct)
 
-        means = [round(mean, 6) for mean in means.cpu().detach().numpy()]
-        std = [round(std_i, 6) for std_i in standard_deviations.cpu().detach().numpy()]
+            means = [round(mean, 6) for mean in means.cpu().detach().numpy()]
+            std = [round(std_i, 6) for std_i in standard_deviations.cpu().detach().numpy()]
 
-        with open(args.output + ".csv", "a") as file:
-            file.write(str(i)+"; "+ data.idx_to_lang[prediction]+"; " + \
-                        data.idx_to_lang[label]+"; "+str(means)+"; " + \
-                        str(std)+"\n")
+            with open(args.output + ".csv", "a") as file:
+                file.write(str(i)+"; "+ data.idx_to_lang[prediction]+"; " + \
+                            data.idx_to_lang[label]+"; "+str(means)+"; " + \
+                            str(std)+"\n")
+
 
     accuracy = round(np.sum(accuracies)/(len(data.data)),4)
     print("Accuracy: ", accuracy)
-    target_names = data.languages
-    df = pd.DataFrame(classification_report(y_true, y_pred,
-                                            target_names=target_names,
-                                            output_dict=True)).transpose()
-    df.to_csv("classification_report_uncertainty_{}.csv".format(args.output), index=True)
+    #target_names = data.languages
+    #df = pd.DataFrame(classification_report(y_true, y_pred,
+    #                                        target_names=target_names,
+    #                                        output_dict=True, labels=data.real_languages)).transpose()
+    #df.to_csv("classification_report_uncertainty_{}.csv".format(args.output), index=True)
 
 def main():
     data = Data()
@@ -303,7 +318,7 @@ def main():
     if args.model == "linreg":
         model = LinearRegressionModel(len(data.vocabulary), len(data.languages))
     elif args.model == "hidlay":
-        model = ExtraLinear(len(data.vocabulary), len(data.languages))
+        model = ExtraLinear(len(data.vocabulary), 235) #len(data.languages))
     else:
         raise ValueError("Not sure what model you want to use.")
     model = model.to(device)
@@ -319,23 +334,23 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-in_dir", default="./data/wili-2018/",
+    parser.add_argument("--in_dir", default="./data/wili-2018/",
                         help="directory of input file")
-    parser.add_argument("-data", default="x_train_sub_clean.txt",
+    parser.add_argument("--data", default="x_train_sub_clean.txt",
                         help="input file containing train data")
-    parser.add_argument("-labels", default="y_train_sub_clean.txt",
+    parser.add_argument("--labels", default="y_train_sub_clean.txt",
                         help="input file containing labels for train data")
-    parser.add_argument("-v_dir", default="./data/vocabs/",
+    parser.add_argument("--v_dir", default="./data/vocabs/",
                         help="directory of vocab file")
-    parser.add_argument("-vocab", default="full_vocab.json",
+    parser.add_argument("--vocab", default="full_vocab.json",
                         help="file vocabulary will be loaded from")
-    parser.add_argument("-m_dir", default="../models/linear/",
+    parser.add_argument("--m_dir", default="../models/linear/",
                         help="directory the model is saved in")
-    parser.add_argument("-output", default="hidden_layer_model_clean",
+    parser.add_argument("--output", default="hidden_layer_model_clean",
                         help="file model is saved to")
-    parser.add_argument("-mode", default="train",
+    parser.add_argument("--mode", default="train",
                         help="train or test")
-    parser.add_argument("-model", default="hidlay",
+    parser.add_argument("--model", default="hidlay",
                         help="'linreg' for linear regression or 'hidlay' for hidden layer")
     parser.add_argument("-batch_size", type=int, default=100,
                         help="... you really need help with this one?")
