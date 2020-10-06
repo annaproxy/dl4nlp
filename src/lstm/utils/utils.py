@@ -45,7 +45,7 @@ def get_entropy(outputs):
 def validate_paragraphs(model, validation_data, validation_loader, save_classification_report=True, subset=True, config=None):
     n_batches = len(validation_loader)
     if subset: n_batches = 1000
-    with open("Twitter_Det_Results_LSTM_FINAL_Chars.csv", "w") as file:
+    with open("Twitter_Det_Results_LSTM_FINAL_Chars_LC.csv", "w") as file:
         file.write("Data_index; prediction; label;\n")
 
     validation_data.predict_paragraph(True)
@@ -69,7 +69,7 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
             y_pred.append(prediction.item())
             y_true.append(labels[0].item())
 
-            with open("Twitter_Det_Results_LSTM_FINAL_Chars.csv", "a") as file: #{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
+            with open("Twitter_Det_Results_LSTM_FINAL_Chars_LC.csv", "a") as file: #{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
                 file.write(str(i)+"; "+validation_data.idx_to_lang[prediction.item()]+"; " + \
                             validation_data.idx_to_lang[labels[0].item()] + "\n")
 
@@ -77,7 +77,7 @@ def validate_paragraphs(model, validation_data, validation_loader, save_classifi
             accuracies.append(correct.item())
             if i == n_batches: break
 
-    accuracy = round(np.sum(accuracies)/(n_batches),4)
+    accuracy = round(np.mean(accuracies),4)
 
     print(accuracy)
     def rowIndex(row):return row.name
