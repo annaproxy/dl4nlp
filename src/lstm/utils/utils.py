@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import torch
 import pandas as pd
@@ -5,6 +6,8 @@ import datetime
 import torch.nn as nn
 from tqdm import tqdm
 from sklearn.metrics import classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 device = torch.device("cuda" if torch.cuda.is_available else "cpu")
 
@@ -15,83 +18,138 @@ def write_results(results, result_name):
             f.write(str(train_loss[i])+","+ str(val_loss[i])+"," + str(val_accuracy[i])+"\n")
 
 def get_accuracy(outputs, labels):
-    return torch.sum(outputs==labels).float() 
+    return torch.sum(outputs==labels).float()
 
 def get_paragraph_prediction(outputs, labels):
     unique_preds = torch.unique(outputs)
     counts = torch.tensor([(outputs==lang).float().sum() for lang in unique_preds])
+    #print("counts: ", counts)
     max_lang = unique_preds[torch.argmax(counts)]
     return max_lang
 
-def validate_model_old(model, validation_data, validation_loader, batch_size, save_classification_report=True):
-    n_batches = len(validation_loader)
-    model.eval()
-    accuracies = []
-    y_pred= []; y_true = [];
-    with torch.no_grad():
-        for i, (inputs, labels) in enumerate(validation_loader):
-            inputs = inputs.to(device);
-            labels = labels.to(device)
-            output = model(inputs)
-            output = torch.argmax(output,dim=1).view(-1)
-            y_pred += output.tolist()
-            y_true += labels.view(-1).tolist()
-            accuracy = get_accuracy(output, labels)
-            accuracies.append(accuracy.item())
-    accuracy = round(np.sum(accuracies)/(n_batches*batch_size),3)
-    if save_classification_report:
-        with open("classification_report.txt", 'w') as file:
-            target_names = validation_data.languages
-            file.write(classification_report(y_true, y_pred, target_names=target_names))
-    return accuracy
+def get_mean_softmax(outputs):
+    probabilities = torch.softmax(outputs, dim=1)
+    probabilities = torch.mean(probabilities, dim=0)
+    return probabilities
 
-def validate_paragraphs(model, validation_data, validation_loader, textfile = 'data/wili-2018/x_val_sub.txt', 
-    save_classification_report=True, subset=True):
+def get_entropy(outputs):
+    probabilities = get_mean_softmax(outputs)
+    probabilities = torch.tensor([1/235 for i in range(235)]).cuda()
+    log_probs = torch.log(probabilities)
+    entropy = -torch.sum(probabilities * log_probs)
+    print(entropy)
+    raise ValueError()
+    return entropy, probabilities
+
+
+def validate_paragraphs(model, validation_data, validation_loader, save_classification_report=True, subset=True, config=None):
     n_batches = len(validation_loader)
     if subset: n_batches = 1000
-    
-    #with open(textfile) as f:
-    #    pars = f.readlines()
+    with open("Twitter_Det_Results_LSTM_FINAL_Chars_LC.csv", "w") as file:
+        file.write("Data_index; prediction; label;\n")
 
     validation_data.predict_paragraph(True)
     model.eval()
+    y_pred = []; y_true = [];
+    accuracies = []
+    with torch.no_grad():
+        for i, (inputs, labels) in enumerate(validation_loader):
+            #print(inputs.shape, labels.shape)
+            if inputs.shape[1] < 1: continue
+
+            inputs = inputs.to(device).squeeze(0).long() #.cpu()
+            labels = labels.to(device).squeeze(0) #.cpu()
+            logits = model(inputs, True)
+
+            probs = get_mean_softmax(logits)
+            #output = torch.argmax(logits,dim=1).view(-1)
+            prediction = torch.argmax(probs)
+            #prediction = get_paragraph_prediction(output, labels)
+
+            y_pred.append(prediction.item())
+            y_true.append(labels[0].item())
+
+            with open("Twitter_Det_Results_LSTM_FINAL_Chars_LC.csv", "a") as file: #{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
+                file.write(str(i)+"; "+validation_data.idx_to_lang[prediction.item()]+"; " + \
+                            validation_data.idx_to_lang[labels[0].item()] + "\n")
+
+            correct = (prediction == labels[0].item()).float()
+            accuracies.append(correct.item())
+            if i == n_batches: break
+
+    accuracy = round(np.mean(accuracies),4)
+
+    print(accuracy)
+    def rowIndex(row):return row.name
+    if save_classification_report:
+        #target_names = validation_data.idx_to_lang
+        df = pd.DataFrame(classification_report(y_true, y_pred,  output_dict=True)).transpose()
+        df['lan_index'] = df.apply(rowIndex, axis=1) # for z in df.index]
+        df['lan'] = df['lan_index'].map(lambda z:validation_data.idx_to_lang[int(z)] if len(z) < 4 else '')
+        df.to_csv('Twitter_classification_report_LSTM_deterministic_{}_{}_{}.csv'.format(config.batch_size, config.input, config.sequence_length), index= True)
+        #print(df)
+    return accuracy
+
+
+def validate_uncertainty(model, validation_data, validation_loader, config=None, save_classification_report=True):
+    n_batches = len(validation_loader)
+    validation_data.predict_paragraph(True)
+    #model.eval()
     model = model #.cpu()
     y_pred = []; y_true = [];
     accuracies = []
 
-    wrong_english_indices = []
+    with open("Twitter_Bayesian_Results_LSTM_FINAL_Chars.csv", "w") as file:
+        file.write("Data_index; prediction; label; means; std\n")
+
+    correct_indices = []
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(validation_loader):
-            inputs = inputs.to(device).squeeze(0) #.cpu()
-            labels = labels.to(device).squeeze(0) #.cpu()
-            output = model(inputs)
-            output = torch.argmax(output,dim=1).view(-1)
-            prediction = get_paragraph_prediction(output, labels)
-            y_pred.append(prediction.item())
-            y_true.append(labels[0].item())
+            if inputs.shape[1] < 1: continue
+            correct_indices.append(i)
+            inputs = inputs.to(device).squeeze(0).long() #.cpu()
+            labels = labels.to(device).squeeze(0).long() #.cpu()
 
-            lang_pred = prediction.item()
-            lang_true = labels[0].item()
-            #if lang_pred == validation_data.lang_to_idx['eng']:
-            #    if lang_pred != lang_true:
-            #        #print(i, validation_data.idx_to_lang[lang_true], pars[i])
-            #        wrong_english_indices.append(i)
-            correct = (prediction == labels[0].item()).float()
-            accuracies.append(correct.item())
-            if i == n_batches: break
+            datapoint_probs = torch.zeros(25,235)
+            for n in range(25):
+                logits = model(inputs, False)
+                probabilities = get_mean_softmax(logits)
+                datapoint_probs[n,:] = probabilities
+
+            standard_deviations = torch.std(datapoint_probs, dim=0)
+            means = torch.mean(datapoint_probs, dim=0)
+            prediction = torch.argmax(means).item()
+
+            label = labels[0].item()
+
+            y_pred.append(prediction)
+            y_true.append(label)
+            correct = (prediction == labels)#.float()
+
+            means = [round(mean, 6) for mean in means.cpu().numpy()]
+            std = [round(std_i, 6) for std_i in standard_deviations.cpu().numpy()]
+            with open("Twitter_Bayesian_Results_LSTM_FINAL_Chars.csv", "a") as file: #{}_{}_{}.csv".format(config.batch_size, config.input, config.sequence_length), "a") as file:
+                file.write(str(i)+"; "+validation_data.idx_to_lang[prediction]+"; " + \
+                            validation_data.idx_to_lang[label]+"; "+str(means)+"; " + \
+                            str(std)+"\n")
+
+            accuracies.append(correct)
+    print(correct_indices)
     #print(len(wrong_english_indices))
-    
-    #with open("indices_fucked_test.txt", "w") as f: 
+
+    #with open("indices_fucked_test.txt", "w") as f:
     #    np.savetxt(f, np.array(wrong_english_indices))
 
     #with open ('confmatrix2.txt', 'w') as f:
     #    np.savetxt(f, confusion_matrix(y_true, y_pred).astype(int), fmt='%i', delimiter=',')
     accuracy = round(np.sum(accuracies)/(n_batches),4)
 
-    #print(accuracy)
-
-    if save_classification_report:
-        target_names = validation_data.languages
-        df = pd.DataFrame(classification_report(y_true, y_pred, target_names=target_names, output_dict=True)).transpose()
-        df.to_csv('classification_report_charclean.csv', index= True)
+    print(accuracy)
+    def rowIndex(row):return row.name
+    if True or save_classification_report:
+        #target_names = validation_data.idx_to_lang
+        df = pd.DataFrame(classification_report(y_true, y_pred,  output_dict=True)).transpose()
+        df['lan_index'] = df.apply(rowIndex, axis=1) # for z in df.index]
+        df['lan'] = df['lan_index'].map(lambda z:validation_data.idx_to_lang[int(z)] if len(z) < 4 else '')
+        df.to_csv('Twitter_classification_report_LSTM_stochastic_{}_{}_{}.csv'.format(config.batch_size, config.input, config.sequence_length), index= True)
     return accuracy

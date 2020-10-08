@@ -3,9 +3,11 @@ from tokenizers.decoders import ByteLevel
 
 NAME = 'unicode-medium'
 LOAD = True 
-train_path = 'data/wili-2018/x_train_sub_clean.txt'
-val_path = 'data/wili-2018/x_val_sub_clean.txt'
-test_path = 'data/wili-2018/x_test_clean.txt'
+train_path = 'data/twitter/x_twituser_cleaned.txt'
+
+#train_path = 'data/wili-2018/x_train_sub_clean.txt'
+#val_path = 'data/wili-2018/x_val_sub_clean.txt'
+#test_path = 'data/wili-2018/x_test_clean.txt'
 
 if LOAD:
     # For loading
@@ -28,15 +30,19 @@ else:
 def write_bpe_file(in_path, out_path):
     with open(in_path, 'r') as f:
         lines = f.readlines()
+        print(len(lines))
         with open(out_path, 'w') as writer:
             for line in lines: 
                 bp_ids = tokenizer.encode(line).ids
                 writer.write(' '.join([str(z) for z in bp_ids]))
                 writer.write('\n')
 
-write_bpe_file(train_path,'data/wili-2018/x_bytes_train_clean.txt')
-write_bpe_file(val_path,'data/wili-2018/x_bytes_val_clean.txt')
-write_bpe_file(test_path,'data/wili-2018/x_bytes_test_clean.txt')
+
+write_bpe_file(train_path,'data/twitter/x_bytes_twituser_cleaned.txt')
+
+#write_bpe_file(train_path,'data/wili-2018/x_bytes_train_clean.txt')
+#write_bpe_file(val_path,'data/wili-2018/x_bytes_val_clean.txt')
+#write_bpe_file(test_path,'data/wili-2018/x_bytes_test_clean.txt')
 
 
 #decoder = ByteLevel()

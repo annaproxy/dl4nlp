@@ -7,7 +7,7 @@
 
 # ignore pretrained models and wili data
 src/lstm/models 
-src/lstm/data
+src/lstm/data/wili-2018
 
 # ignore anna directory
 src/lstm/reports_exclude

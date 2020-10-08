@@ -1,6 +1,6 @@
 
 from torch.utils.data import DataLoader
-from data.load_data import get_wili_data
+from data.load_data import get_wili_data, get_wili_data_bytes
 
 import os
 import sys
@@ -18,20 +18,30 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def predict(model, validation_loader, validation_data, config):
     model.eval()
 
-    accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False)
-    print("Validation Accuracy: {}".format(accuracy))
+    if config.prediction_type=="deterministic":
+        accuracy = validate_paragraphs(model, validation_data, validation_loader, subset=False, config=config)
+        print("Validation Accuracy: {}".format(accuracy))
+    else:
+        accuracy = validate_uncertainty(model, validation_data, validation_loader, config=config)
+        print("Validation Accuracy: {}".format(accuracy))
 
     #write_results((avg_train_loss, val_loss, val_accuracy), model_type+"_")
     print("Iterators Done")
 
 def main():
 
-    gpt_config = GPT2Config()
     param_config = config()
+    gpt_config = GPT2Config(vocab_size_or_config_json_file=param_config.input_dim, n_positions=param_config.sequence_length, n_ctx=param_config.sequence_length)
 
     model = GPT2LMHeadModel(gpt_config)
     # Load Data
-    _, validation_data = get_wili_data(param_config)
+    # Load Data
+    if param_config.input == 'bytes':
+        # Load Data for bytes
+        _, validation_data = get_wili_data_bytes(param_config)
+    else:
+        # Load Data
+        _, validation_data = get_wili_data(param_config)
 
     validation_loader = DataLoader(validation_data,
                              batch_size=1,

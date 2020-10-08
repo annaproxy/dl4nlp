@@ -6,12 +6,12 @@
 class GPT2Config(object):
     def __init__(
             self,
-            vocab_size_or_config_json_file=12300,
-            n_positions=128,
-            n_ctx=128,
+            vocab_size_or_config_json_file=20000,
+            n_positions=30,
+            n_ctx=30,
             n_embd=256,
-            n_layer=1,
-            n_head=1,
+            n_layer=2,
+            n_head=2,
             layer_norm_epsilon=1e-5,
             initializer_range=0.02,
     ):
